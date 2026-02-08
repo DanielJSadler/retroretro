@@ -6,6 +6,7 @@ import ParticipantList from '@/components/organisms/ParticipantList';
 import PhaseControls from '@/components/organisms/PhaseControls';
 import Timer from '@/components/organisms/Timer';
 import ZoomControls from '@/components/molecules/ZoomControls';
+import MusicPlayer from '@/components/organisms/MusicPlayer';
 
 interface SidebarProps {
   session: Session;
@@ -19,9 +20,15 @@ interface SidebarProps {
   onStartTimer: (duration: number) => void;
   onPauseTimer: () => void;
   onResetTimer: () => void;
+  onTimerFinish?: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onZoomReset: () => void;
+  // Music Props
+  musicCurrentSong?: string;
+  musicStatus?: 'playing' | 'paused';
+  musicStartedAt?: number;
+  musicSeekTime?: number;
 }
 
 export default function Sidebar({
@@ -33,17 +40,22 @@ export default function Sidebar({
   onStartTimer,
   onPauseTimer,
   onResetTimer,
+  onTimerFinish,
   onZoomIn,
   onZoomOut,
   onZoomReset,
+  musicCurrentSong,
+  musicStatus,
+  musicStartedAt,
+  musicSeekTime,
 }: SidebarProps) {
   return (
     <aside
-      className={`bg-white shadow-lg transition-all duration-300 overflow-y-auto flex-shrink-0 ${
-        collapsed ? 'w-0 p-0 overflow-hidden' : 'w-72 p-3'
+      className={`bg-white shadow-lg transition-all duration-300 overflow-y-auto flex-shrink-0 flex flex-col ${
+        collapsed ? 'w-0 p-0 overflow-hidden' : 'w-72'
       }`}
     >
-      <div className="space-y-3">
+      <div className="flex-1 p-3 space-y-3">
         <ParticipantList
           participants={session.participants}
           currentUser={currentUser}
@@ -63,6 +75,7 @@ export default function Sidebar({
           onStart={onStartTimer}
           onPause={onPauseTimer}
           onReset={onResetTimer}
+          onFinish={onTimerFinish}
         />
 
         <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-600">
@@ -82,6 +95,15 @@ export default function Sidebar({
           onReset={onZoomReset}
         />
       </div>
+      
+      {/* Music Player at bottom */}
+      <MusicPlayer
+        boardId={session.id}
+        currentSong={musicCurrentSong}
+        status={musicStatus}
+        startedAt={musicStartedAt}
+        seekTime={musicSeekTime}
+      />
     </aside>
   );
 }

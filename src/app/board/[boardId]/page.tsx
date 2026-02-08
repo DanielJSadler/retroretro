@@ -51,6 +51,7 @@ export default function BoardPage() {
     api.boards.get,
     boardId ? { boardId: boardId as Id<"boards"> } : "skip"
   );
+  
   const currentUser = useQuery(api.users.current);
   
   const joinBoard = useMutation(api.participants.join);
@@ -64,6 +65,7 @@ export default function BoardPage() {
   const startTimer = useMutation(api.timer.start);
   const pauseTimer = useMutation(api.timer.pause);
   const resetTimer = useMutation(api.timer.reset);
+  const pauseMusic = useMutation(api.music.pause);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -549,6 +551,10 @@ export default function BoardPage() {
           onZoomIn={() => setZoom((z) => Math.min(2, z + 0.1))}
           onZoomOut={() => setZoom((z) => Math.max(0.25, z - 0.1))}
           onZoomReset={() => setZoom(1)}
+          musicCurrentSong={board?.musicCurrentSong}
+          musicStatus={board?.musicStatus}
+          musicStartedAt={board?.musicStartedAt}
+          musicSeekTime={board?.musicSeekTime}
         />
 
         <main id="board-main" className="flex-1 p-3 overflow-auto">

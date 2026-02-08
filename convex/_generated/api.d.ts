@@ -14,6 +14,7 @@ import type * as confetti from "../confetti.js";
 import type * as folders from "../folders.js";
 import type * as http from "../http.js";
 import type * as migrations from "../migrations.js";
+import type * as music from "../music.js";
 import type * as notes from "../notes.js";
 import type * as participants from "../participants.js";
 import type * as timer from "../timer.js";
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   folders: typeof folders;
   http: typeof http;
   migrations: typeof migrations;
+  music: typeof music;
   notes: typeof notes;
   participants: typeof participants;
   timer: typeof timer;

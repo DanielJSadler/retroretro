@@ -28,6 +28,12 @@ export default defineSchema({
     timerPaused: v.boolean(),
     timerRemainingTime: v.optional(v.number()),
     votesPerPerson: v.number(),
+    
+    // Music Player
+    musicCurrentSong: v.optional(v.string()),
+    musicStatus: v.optional(v.union(v.literal("playing"), v.literal("paused"))),
+    musicStartedAt: v.optional(v.number()),
+    musicSeekTime: v.optional(v.number()),
   }).index("by_creator", ["createdBy"]),
 
   // Sections within a board
