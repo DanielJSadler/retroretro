@@ -60,7 +60,7 @@ export default function Header({
             {sidebarCollapsed ? '☰' : '✕'}
           </button>
           <div>
-            <h1 className="text-xl font-bold text-black">{session.name}</h1>
+            <h2 className="text-xl font-bold text-black">{session.name}</h2>
             <p className="text-xs text-gray-600">
               Phase:{' '}
               <span className="font-semibold capitalize">{session.phase}</span>

@@ -1,26 +1,153 @@
 @import "tailwindcss";
 
+/* ===================================================================
+   BASE THEME VARIABLES (Pixel Garden Default)
+   Google Fonts loaded via layout.tsx <link> tags
+   =================================================================== */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Pixel Garden Theme Variables */
+  /* Pixel Garden Theme Variables (Dark Mode) */
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-card: #21262d;
+  --text-primary: #c9d1d9;
+  --text-secondary: #8b949e;
+  --accent-primary: #9370DB;
+  --accent-secondary: #FFB6C1;
+  --accent-tertiary: #7ee787;
+  
+  /* Typography */
+  --font-heading: 'Silkscreen', monospace;
+  --font-body: 'Pixelify Sans', sans-serif;
+  
+  /* Effects */
+  --glow-color: rgba(147, 112, 219, 0.4);
+  --shadow-color: rgba(0, 0, 0, 0.2);
+  --border-radius: 0;
+  
+  /* Animation */
+  --transition-speed: 0.3s;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-background: var(--bg-primary);
+  --color-foreground: var(--text-primary);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-body);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #0d1117;
+  background-image: 
+    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239370DB' fill-opacity='0.2'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h2v6h2v-2h4v2h2v-6h2v-2h-4zm0-30V0h-2v4h-4v2h2v6h2V9h4V7h2V1h2V0h-4zM6 34v-4H4v4H0v2h2v6h2v-2h4v2h2v-6h2v-2H6zM6 4V0H4v4H0v2h2v6h2V9h4V7h2V1h2V0H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-attachment: fixed;
+  color: #c9d1d9; /* Lighter text for dark mode */
+  font-family: var(--font-body);
+  image-rendering: pixelated;
+  transition: background var(--transition-speed), color var(--transition-speed);
+}
+
+/* Global Styles for Pixel Theme */
+
+/* Update variables for dark mode if needed, but overriding directly here */
+
+/* Heading Styles */
+h1 {
+  font-family: var(--font-heading);
+  color: #7ee787; /* Green heading for retro feel */
+  text-shadow: 
+    4px 4px 0 #9370DB,
+    -2px -2px 0 #FFB6C1;
+  letter-spacing: 2px;
+}
+
+h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  color: #7ee787;
+  letter-spacing: 1px;
+  text-shadow: none; /* Explicitly remove shadow */
+}
+
+/* Override background gradients to include pattern */
+.bg-gradient-to-br {
+  background-color: #0d1117 !important;
+  background-image: 
+    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239370DB' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h2v6h2v-2h4v2h2v-6h2v-2h-4zm0-30V0h-2v4h-4v2h2v6h2V9h4V7h2V1h2V0h-4zM6 34v-4H4v4H0v2h2v6h2v-2h4v2h2v-6h2v-2H6zM6 4V0H4v4H0v2h2v6h2V9h4V7h2V1h2V0H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") !important;
+}
+
+/* Text Overrides */
+.text-blue-100 {
+  color: #4a6363 !important;
+}
+
+/* Card Styles */
+.bg-white {
+  background: #FFFDD0 !important; /* Cream background */
+  border: 4px solid #7ee787; /* Neon border */
+  box-shadow: 
+    8px 8px 0 rgba(0, 0, 0, 0.5),
+    inset -4px -4px 0 rgba(0, 0, 0, 0.1),
+    inset 4px 4px 0 rgba(255, 255, 255, 0.5);
+  border-radius: 0 !important;
+  color: #2F4F4F; /* Dark text inside cards */
+}
+
+/* Input Styles */
+input, textarea, select, input[type="text"] {
+  background-color: #ffffff !important;
+  border: 3px solid #2F4F4F !important;
+  color: #2F4F4F !important;
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  border-radius: 0 !important;
+  box-shadow: 
+    inset 2px 2px 0 rgba(0, 0, 0, 0.1),
+    inset -2px -2px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* Button Styles */
+button {
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  border-radius: 0 !important;
+}
+
+.bg-blue-600 {
+  background: linear-gradient(180deg, #9370DB 0%, #7B68EE 100%) !important;
+  color: #ffffff !important;
+  border: 3px solid #ffffff; /* White border for buttons to pop */
+  box-shadow: 
+    4px 4px 0 #7ee787, /* Green shadow */
+    inset -2px -2px 0 rgba(0, 0, 0, 0.2),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.3);
+}
+
+.bg-blue-600:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 
+    2px 2px 0 #7ee787,
+    inset -2px -2px 0 rgba(0, 0, 0, 0.2),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.3);
+}
+
+.bg-blue-600:active {
+  transform: translate(4px, 4px);
+  box-shadow: 
+    0 0 0 #7ee787,
+    inset -2px -2px 0 rgba(0, 0, 0, 0.2),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Sticky Note Styles */
+/* Keep notes light for readability, but update borders */
+.bg-yellow-200 { background: #FFE66D !important; border: 3px solid #ffffff; box-shadow: 4px 4px 0 rgba(0,0,0,0.5); color: #000; }
+.bg-blue-200 { background: #A8DADC !important; border: 3px solid #ffffff; box-shadow: 4px 4px 0 rgba(0,0,0,0.5); color: #000; }
+.bg-green-200 { background: #98FB98 !important; border: 3px solid #ffffff; box-shadow: 4px 4px 0 rgba(0,0,0,0.5); color: #000; }
+.bg-red-200 { background: #FFB4A2 !important; border: 3px solid #ffffff; box-shadow: 4px 4px 0 rgba(0,0,0,0.5); color: #000; }
+.bg-pink-200 { background: #FFB6C1 !important; border: 3px solid #ffffff; box-shadow: 4px 4px 0 rgba(0,0,0,0.5); color: #000; }
+
+/* Theme Switcher Styles (for single theme display if kept, or hidden) */
+.theme-switcher {
+  display: none; /* Hidden since we only have one theme now */
 }
