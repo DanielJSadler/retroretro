@@ -84,4 +84,16 @@ export default defineSchema({
     .index("by_board", ["boardId"])
     .index("by_user_and_board", ["userId", "boardId"])
     .index("by_user_and_folder", ["userId", "folderId"]),
+
+  // Ephemeral confetti events
+  confetti: defineTable({
+    boardId: v.id("boards"),
+    senderId: v.id("users"),
+    type: v.string(),
+    originX: v.number(),
+    originY: v.number(),
+    angle: v.number(),
+    velocity: v.number(),
+    distance: v.number(),
+  }).index("by_board", ["boardId"]),
 });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useQuery, useMutation } from 'convex/react';
 import { useConvexAuth } from 'convex/react';
@@ -9,6 +9,8 @@ import { Id } from '../../../../convex/_generated/dataModel';
 import StickyNote from '@/components/organisms/StickyNote';
 import Header from '@/components/organisms/Header';
 import Sidebar from '@/components/organisms/Sidebar';
+import ConfettiLayer from '@/components/organisms/ConfettiLayer';
+import ConfettiMenu from '@/components/molecules/ConfettiMenu';
 import { Note, Phase, NoteColor, Section, Session } from '@/types';
 
 const sectionColorClasses: Record<NoteColor, string> = {
@@ -39,6 +41,10 @@ export default function BoardPage() {
   const draggingNoteRef = useRef<Note | null>(null);
   const boardRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
+
+  // Confetti State
+  const [isConfettiMode, setIsConfettiMode] = useState(false);
+  const [confettiType, setConfettiType] = useState<'basic' | 'stars' | 'fireworks' | 'random'>('basic');
 
   // Convex queries and mutations
   const board = useQuery(
@@ -760,6 +766,18 @@ export default function BoardPage() {
             </div>
           </div>
         )}
+        <ConfettiLayer 
+          isActive={isConfettiMode} 
+          type={confettiType} 
+          boardId={boardId}
+          currentUserId={currentUser?.id}
+        />
+        <ConfettiMenu
+          isActive={isConfettiMode}
+          onToggle={() => setIsConfettiMode(!isConfettiMode)}
+          currentType={confettiType}
+          onTypeChange={setConfettiType}
+        />
       </div>
     </div>
   );
