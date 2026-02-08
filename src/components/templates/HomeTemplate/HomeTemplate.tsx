@@ -1,30 +1,37 @@
 'use client';
 
 import React from 'react';
-import Input from '@/components/atoms/Input';
 import CreateBoardForm, { SectionInput } from '@/components/organisms/CreateBoardForm';
 import JoinBoardForm from '@/components/organisms/JoinBoardForm';
-import RecentBoardsList from '@/components/organisms/RecentBoardsList';
-import { BoardSummary } from '@/types';
+import FolderList from '@/components/organisms/FolderList';
+import { BoardSummary, Folder } from '@/types';
 
 interface HomeTemplateProps {
   name: string;
-  onNameChange: (name: string) => void;
   onCreateBoard: (boardName: string, sections: SectionInput[]) => void;
   onJoinBoard: (boardId: string) => void;
   onRejoinBoard: (boardId: string) => void;
   previousBoards: BoardSummary[];
+  folders: Folder[];
   isLoadingBoards: boolean;
+  onCreateFolder: (name: string) => Promise<string | null>;
+  onRenameFolder: (folderId: string, name: string) => void;
+  onDeleteFolder: (folderId: string) => void;
+  onMoveToFolder: (boardId: string, folderId: string | null) => void;
 }
 
 export default function HomeTemplate({
   name,
-  onNameChange,
   onCreateBoard,
   onJoinBoard,
   onRejoinBoard,
   previousBoards,
+  folders,
   isLoadingBoards,
+  onCreateFolder,
+  onRenameFolder,
+  onDeleteFolder,
+  onMoveToFolder,
 }: HomeTemplateProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 p-4">
@@ -43,17 +50,9 @@ export default function HomeTemplate({
             htmlFor="name"
             className="block text-sm font-medium text-gray-700 mb-2"
           >
-            Your name
+            Logged in as
           </label>
-          <Input
-            id="name"
-            type="text"
-            value={name}
-            onChange={(e) => onNameChange(e.target.value)}
-            placeholder="Enter your name"
-            className="py-3"
-            maxLength={30}
-          />
+          <h3 className="text-lg font-semibold text-gray-800">{name}</h3>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
@@ -61,10 +60,15 @@ export default function HomeTemplate({
           <JoinBoardForm onSubmit={onJoinBoard} disabled={!name.trim()} />
         </div>
 
-        <RecentBoardsList
+        <FolderList
           boards={previousBoards}
+          folders={folders}
           isLoading={isLoadingBoards}
           onRejoin={onRejoinBoard}
+          onCreateFolder={onCreateFolder}
+          onRenameFolder={onRenameFolder}
+          onDeleteFolder={onDeleteFolder}
+          onMoveToFolder={onMoveToFolder}
         />
       </div>
     </div>

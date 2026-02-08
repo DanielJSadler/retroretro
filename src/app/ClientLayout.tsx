@@ -1,6 +1,7 @@
 'use client';
 
 import { ThemeProvider } from '@/context/ThemeProvider';
+import { ConvexClientProvider } from '@/components/providers/ConvexClientProvider';
 
 export default function ClientLayout({
   children,
@@ -8,8 +9,10 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ThemeProvider>
-      {children}
-    </ThemeProvider>
+    <ConvexClientProvider>
+      <ThemeProvider>
+        {children}
+      </ThemeProvider>
+    </ConvexClientProvider>
   );
 }
