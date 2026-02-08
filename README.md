@@ -121,3 +121,4 @@ npm run lint
 - Session data is stored in-memory and will reset when the server restarts
 - For production use, consider adding a database like Redis or PostgreSQL
 - Multiple users can collaborate by opening the same URL in different browsers/tabs
+# retroretro
