@@ -52,6 +52,13 @@ export interface BoardSummary {
   phase: Phase;
   participantCount: number;
   noteCount: number;
+  folderId?: string;
+}
+
+export interface Folder {
+  id: string;
+  name: string;
+  color?: string;
 }
 
 export interface TimerConfig {
