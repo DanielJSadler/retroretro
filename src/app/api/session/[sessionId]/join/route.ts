@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  addParticipant,
-  getSession,
-  createSessionWithSections,
-} from '@/lib/sessionStore';
-import { Section } from '@/types';
+import { addParticipant, getSession } from '@/lib/sessionStore';
 
 export async function POST(
   request: NextRequest,
@@ -12,9 +7,8 @@ export async function POST(
 ) {
   const { sessionId } = await params;
   const body = await request.json();
-  const { userName, sections } = body as {
+  const { userName } = body as {
     userName: string;
-    sections?: Section[];
   };
 
   if (!userName) {
@@ -24,14 +18,10 @@ export async function POST(
     );
   }
 
-  // If sections provided and session doesn't exist yet, create with sections
+  // Check if session exists
   const existingSession = getSession(sessionId);
-  if (
-    sections &&
-    sections.length > 0 &&
-    existingSession.participants.length === 0
-  ) {
-    createSessionWithSections(sessionId, sections);
+  if (!existingSession) {
+    return NextResponse.json({ error: 'Board not found' }, { status: 404 });
   }
 
   const session = addParticipant(sessionId, userName);

@@ -29,6 +29,9 @@ export interface Participant {
 
 export interface Session {
   id: string;
+  name: string; // Board name
+  createdAt: number; // Timestamp when board was created
+  createdBy: string; // Name of person who created the board
   phase: Phase;
   notes: Note[];
   participants: Participant[];
@@ -38,6 +41,17 @@ export interface Session {
   timerPaused: boolean;
   timerRemainingTime?: number;
   votesPerPerson: number; // Number of votes each participant gets
+}
+
+// Summary info for listing boards (doesn't include full notes data)
+export interface BoardSummary {
+  id: string;
+  name: string;
+  createdAt: number;
+  createdBy: string;
+  phase: Phase;
+  participantCount: number;
+  noteCount: number;
 }
 
 export interface TimerConfig {

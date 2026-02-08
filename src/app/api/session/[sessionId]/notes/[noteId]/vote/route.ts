@@ -14,6 +14,9 @@ export async function POST(
   }
 
   const currentSession = getSession(sessionId);
+  if (!currentSession) {
+    return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+  }
   if (currentSession.phase !== 'voting') {
     return NextResponse.json(
       { error: 'Voting is only allowed during the voting phase' },

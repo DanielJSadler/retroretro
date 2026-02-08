@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import StickyNote from '@/components/StickyNote';
-import Timer from '@/components/Timer';
-import PhaseControls from '@/components/PhaseControls';
-import ParticipantList from '@/components/ParticipantList';
+import { useRouter, useParams } from 'next/navigation';
+import StickyNote from '@/components/organisms/StickyNote';
+import Header from '@/components/organisms/Header';
+import Sidebar from '@/components/organisms/Sidebar';
 import { Session, Note, Phase, NoteColor, Section } from '@/types';
+
+const VISITED_BOARDS_KEY = 'visitedBoards';
 
 const sectionColorClasses: Record<NoteColor, string> = {
   yellow: 'bg-yellow-100 border-yellow-300',
@@ -18,9 +19,13 @@ const sectionColorClasses: Record<NoteColor, string> = {
 
 export default function BoardPage() {
   const router = useRouter();
+  const params = useParams();
+  const boardId = params.boardId as string;
+
   const [session, setSession] = useState<Session | null>(null);
   const [currentUser, setCurrentUser] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [creatingInSection, setCreatingInSection] = useState<string | null>(
     null,
@@ -34,7 +39,6 @@ export default function BoardPage() {
     y: number;
   } | null>(null);
   const draggingNoteRef = useRef<Note | null>(null);
-  const sessionId = 'default-session';
   const boardRef = useRef<HTMLDivElement>(null);
 
   // Refs for each section container
@@ -42,15 +46,17 @@ export default function BoardPage() {
 
   const syncSession = useCallback(async () => {
     try {
-      const response = await fetch(`/api/session/${sessionId}`);
+      const response = await fetch(`/api/session/${boardId}`);
       if (response.ok) {
         const data = await response.json();
         setSession(data);
+      } else if (response.status === 404) {
+        setNotFound(true);
       }
     } catch (error) {
       console.error('Failed to sync session:', error);
     }
-  }, [sessionId]);
+  }, [boardId]);
 
   useEffect(() => {
     const userName = localStorage.getItem('userName');
@@ -60,23 +66,31 @@ export default function BoardPage() {
     }
     setCurrentUser(userName);
 
-    // Get sections from localStorage (set during board creation)
-    const storedSections = localStorage.getItem('boardSections');
-    const sections: Section[] = storedSections
-      ? JSON.parse(storedSections)
-      : [];
-
     const joinSession = async () => {
       try {
-        const response = await fetch(`/api/session/${sessionId}/join`, {
+        const response = await fetch(`/api/session/${boardId}/join`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userName, sections }),
+          body: JSON.stringify({ userName }),
         });
 
         if (response.ok) {
           const data = await response.json();
           setSession(data);
+
+          // Save this board to visited boards
+          const visitedIds = JSON.parse(
+            localStorage.getItem(VISITED_BOARDS_KEY) || '[]',
+          ) as string[];
+          if (!visitedIds.includes(boardId)) {
+            visitedIds.unshift(boardId);
+            localStorage.setItem(
+              VISITED_BOARDS_KEY,
+              JSON.stringify(visitedIds.slice(0, 50)),
+            );
+          }
+        } else if (response.status === 404) {
+          setNotFound(true);
         }
       } catch (error) {
         console.error('Failed to join session:', error);
@@ -91,7 +105,7 @@ export default function BoardPage() {
     const interval = setInterval(syncSession, 2000);
 
     return () => clearInterval(interval);
-  }, [router, syncSession]);
+  }, [router, boardId, syncSession]);
 
   // Handle wheel zoom with passive: false to prevent browser zoom
   useEffect(() => {
@@ -126,7 +140,7 @@ export default function BoardPage() {
     };
 
     try {
-      await fetch(`/api/session/${sessionId}/notes`, {
+      await fetch(`/api/session/${boardId}/notes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -283,7 +297,7 @@ export default function BoardPage() {
 
   const handleUpdateNote = async (id: string, updates: Partial<Note>) => {
     try {
-      await fetch(`/api/session/${sessionId}/notes/${id}`, {
+      await fetch(`/api/session/${boardId}/notes/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
@@ -296,7 +310,7 @@ export default function BoardPage() {
 
   const handleDeleteNote = async (id: string) => {
     try {
-      await fetch(`/api/session/${sessionId}/notes/${id}`, {
+      await fetch(`/api/session/${boardId}/notes/${id}`, {
         method: 'DELETE',
       });
       await syncSession();
@@ -310,7 +324,7 @@ export default function BoardPage() {
     options?: { votesPerPerson?: number; resetVotes?: boolean },
   ) => {
     try {
-      await fetch(`/api/session/${sessionId}/phase`, {
+      await fetch(`/api/session/${boardId}/phase`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phase, ...options }),
@@ -323,7 +337,7 @@ export default function BoardPage() {
 
   const handleStartTimer = async (duration: number) => {
     try {
-      await fetch(`/api/session/${sessionId}/timer/start`, {
+      await fetch(`/api/session/${boardId}/timer/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ duration }),
@@ -336,7 +350,7 @@ export default function BoardPage() {
 
   const handlePauseTimer = async () => {
     try {
-      await fetch(`/api/session/${sessionId}/timer/pause`, {
+      await fetch(`/api/session/${boardId}/timer/pause`, {
         method: 'POST',
       });
       await syncSession();
@@ -347,7 +361,7 @@ export default function BoardPage() {
 
   const handleResetTimer = async () => {
     try {
-      await fetch(`/api/session/${sessionId}/timer/reset`, {
+      await fetch(`/api/session/${boardId}/timer/reset`, {
         method: 'POST',
       });
       await syncSession();
@@ -376,7 +390,7 @@ export default function BoardPage() {
 
   const handleVote = async (noteId: string) => {
     try {
-      await fetch(`/api/session/${sessionId}/notes/${noteId}/vote`, {
+      await fetch(`/api/session/${boardId}/notes/${noteId}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userName: currentUser }),
@@ -437,7 +451,34 @@ export default function BoardPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-xl font-semibold text-black">Loading...</div>
+        <div className="text-center">
+          <div className="text-4xl mb-4">🔄</div>
+          <div className="text-xl font-semibold text-black">
+            Loading board...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (notFound) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🔍</div>
+          <h1 className="text-2xl font-bold text-black mb-2">
+            Board Not Found
+          </h1>
+          <p className="text-gray-600 mb-4">
+            This board doesn&apos;t exist or may have been deleted.
+          </p>
+          <button
+            onClick={() => router.push('/')}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all"
+          >
+            Go to Home
+          </button>
+        </div>
       </div>
     );
   }
@@ -445,145 +486,53 @@ export default function BoardPage() {
   if (!session) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-xl font-semibold text-black">
-          Failed to load session
+        <div className="text-center">
+          <div className="text-4xl mb-4">⚠️</div>
+          <div className="text-xl font-semibold text-black mb-4">
+            Failed to load board
+          </div>
+          <button
+            onClick={() => router.push('/')}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all"
+          >
+            Go to Home
+          </button>
         </div>
       </div>
     );
   }
 
+  const copyBoardLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    alert('Board link copied to clipboard!');
+  };
+
   return (
     <div className="h-screen flex flex-col bg-gray-100 text-black overflow-hidden">
-      {/* Header */}
-      <header className="bg-white shadow-md flex-shrink-0">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="p-2 hover:bg-gray-100 rounded-md transition-colors"
-              title={sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'}
-            >
-              {sidebarCollapsed ? '☰' : '✕'}
-            </button>
-            <div>
-              <h1 className="text-xl font-bold text-black">Retro Board</h1>
-              <p className="text-xs text-gray-600">
-                Phase:{' '}
-                <span className="font-semibold capitalize">
-                  {session.phase}
-                </span>
-              </p>
-            </div>
-          </div>
-
-          {/* Phase Banner - inline in header */}
-          <div
-            className={`px-4 py-2 rounded-lg text-white font-semibold text-sm ${
-              session.phase === 'writing'
-                ? 'bg-blue-600'
-                : session.phase === 'reveal'
-                  ? 'bg-green-600'
-                  : session.phase === 'voting'
-                    ? 'bg-orange-600'
-                    : 'bg-purple-600'
-            }`}
-          >
-            {session.phase === 'writing' &&
-              '✍️ Writing - Your notes are private (others see ghosts)'}
-            {session.phase === 'reveal' && '👀 Reveal - All notes visible'}
-            {session.phase === 'voting' &&
-              `🗳️ Voting - ${getRemainingVotes()} votes left`}
-            {session.phase === 'discussion' &&
-              '💬 Discussion - Top voted → Actions'}
-          </div>
-
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-black">
-              <span className="font-semibold">{currentUser}</span>
-            </span>
-            <button
-              onClick={handleLeave}
-              className="px-3 py-1.5 bg-gray-200 text-black rounded-md hover:bg-gray-300 transition-colors text-sm"
-            >
-              Leave
-            </button>
-          </div>
-        </div>
-      </header>
+      <Header
+        session={session}
+        currentUser={currentUser}
+        sidebarCollapsed={sidebarCollapsed}
+        onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onCopyLink={copyBoardLink}
+        onLeave={handleLeave}
+        getRemainingVotes={getRemainingVotes}
+      />
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Collapsible Sidebar */}
-        <aside
-          className={`bg-white shadow-lg transition-all duration-300 overflow-y-auto flex-shrink-0 ${
-            sidebarCollapsed ? 'w-0 p-0 overflow-hidden' : 'w-72 p-3'
-          }`}
-        >
-          <div className="space-y-3">
-            <ParticipantList
-              participants={session.participants}
-              currentUser={currentUser}
-            />
-
-            <PhaseControls
-              currentPhase={session.phase}
-              onPhaseChange={handlePhaseChange}
-              votesPerPerson={session.votesPerPerson}
-            />
-
-            <Timer
-              duration={session.timerDuration}
-              startedAt={session.timerStartedAt}
-              isPaused={session.timerPaused}
-              remainingTime={session.timerRemainingTime}
-              onStart={handleStartTimer}
-              onPause={handlePauseTimer}
-              onReset={handleResetTimer}
-            />
-
-            <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-600">
-              <p className="font-semibold mb-1">💡 Tips:</p>
-              <ul className="space-y-1">
-                <li>• Click anywhere in a section to add a note</li>
-                <li>• Drag notes between sections</li>
-                <li>• Use → Action button to create action items</li>
-                <li>• Ctrl/Cmd + scroll to zoom</li>
-              </ul>
-            </div>
-
-            {/* Zoom Controls */}
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="font-semibold text-xs text-gray-600 mb-2">
-                🔍 Zoom
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setZoom((z) => Math.max(0.25, z - 0.1))}
-                  className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm font-bold"
-                  title="Zoom out"
-                >
-                  −
-                </button>
-                <span className="text-sm font-medium text-gray-700 min-w-[3rem] text-center">
-                  {Math.round(zoom * 100)}%
-                </span>
-                <button
-                  onClick={() => setZoom((z) => Math.min(2, z + 0.1))}
-                  className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm font-bold"
-                  title="Zoom in"
-                >
-                  +
-                </button>
-                <button
-                  onClick={() => setZoom(1)}
-                  className="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs"
-                  title="Reset zoom"
-                >
-                  Reset
-                </button>
-              </div>
-            </div>
-          </div>
-        </aside>
+        <Sidebar
+          session={session}
+          currentUser={currentUser}
+          collapsed={sidebarCollapsed}
+          zoom={zoom}
+          onPhaseChange={handlePhaseChange}
+          onStartTimer={handleStartTimer}
+          onPauseTimer={handlePauseTimer}
+          onResetTimer={handleResetTimer}
+          onZoomIn={() => setZoom((z) => Math.min(2, z + 0.1))}
+          onZoomOut={() => setZoom((z) => Math.max(0.25, z - 0.1))}
+          onZoomReset={() => setZoom(1)}
+        />
 
         {/* Main Board - Sections fill available space */}
         <main id="board-main" className="flex-1 p-3 overflow-auto">

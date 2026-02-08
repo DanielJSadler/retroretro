@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Board {
+  id                 String    @id @default(uuid())
+  name               String
+  createdAt          DateTime  @default(now())
+  createdBy          String
+  phase              String    @default("writing")
+  timerDuration      Int       @default(0)
+  timerStartedAt     DateTime?
+  timerPaused        Boolean   @default(true)
+  timerRemainingTime Int?
+  votesPerPerson     Int       @default(3)
+
+  sections     Section[]
+  notes        Note[]
+  participants Participant[]
+}
+
+model Section {
+  id      String @id @default(uuid())
+  name    String
+  color   String
+  boardId String
+  board   Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  notes Note[]
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  content   String
+  color     String
+  createdBy String
+  positionX Float
+  positionY Float
+  createdAt DateTime @default(now())
+
+  boardId String
+  board   Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  sectionId String
+  section   Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  votes Vote[]
+}
+
+model Vote {
+  id       String @id @default(uuid())
+  noteId   String
+  note     Note   @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  userName String
+
+  @@unique([noteId, userName])
+}
+
+model Participant {
+  id       String   @id @default(uuid())
+  name     String
+  isActive Boolean  @default(true)
+  lastSeen DateTime @default(now())
+  boardId  String
+  board    Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, name])
+}
