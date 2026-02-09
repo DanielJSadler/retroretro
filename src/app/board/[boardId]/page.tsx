@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useQuery, useMutation } from 'convex/react';
 import { useConvexAuth } from 'convex/react';
@@ -9,6 +9,8 @@ import { Id } from '../../../../convex/_generated/dataModel';
 import StickyNote from '@/components/organisms/StickyNote';
 import Header from '@/components/organisms/Header';
 import Sidebar from '@/components/organisms/Sidebar';
+import ConfettiLayer from '@/components/organisms/ConfettiLayer';
+import ConfettiMenu from '@/components/molecules/ConfettiMenu';
 import { Note, Phase, NoteColor, Section, Session } from '@/types';
 
 const sectionColorClasses: Record<NoteColor, string> = {
@@ -40,11 +42,16 @@ export default function BoardPage() {
   const boardRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
+  // Confetti State
+  const [isConfettiMode, setIsConfettiMode] = useState(false);
+  const [confettiType, setConfettiType] = useState<'basic' | 'stars' | 'fireworks' | 'random'>('basic');
+
   // Convex queries and mutations
   const board = useQuery(
     api.boards.get,
     boardId ? { boardId: boardId as Id<"boards"> } : "skip"
   );
+  
   const currentUser = useQuery(api.users.current);
   
   const joinBoard = useMutation(api.participants.join);
@@ -58,6 +65,7 @@ export default function BoardPage() {
   const startTimer = useMutation(api.timer.start);
   const pauseTimer = useMutation(api.timer.pause);
   const resetTimer = useMutation(api.timer.reset);
+  const pauseMusic = useMutation(api.music.pause);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -543,6 +551,10 @@ export default function BoardPage() {
           onZoomIn={() => setZoom((z) => Math.min(2, z + 0.1))}
           onZoomOut={() => setZoom((z) => Math.max(0.25, z - 0.1))}
           onZoomReset={() => setZoom(1)}
+          musicCurrentSong={board?.musicCurrentSong}
+          musicStatus={board?.musicStatus}
+          musicStartedAt={board?.musicStartedAt}
+          musicSeekTime={board?.musicSeekTime}
         />
 
         <main id="board-main" className="flex-1 p-3 overflow-auto">
@@ -760,6 +772,18 @@ export default function BoardPage() {
             </div>
           </div>
         )}
+        <ConfettiLayer 
+          isActive={isConfettiMode} 
+          type={confettiType} 
+          boardId={boardId}
+          currentUserId={currentUser?.id}
+        />
+        <ConfettiMenu
+          isActive={isConfettiMode}
+          onToggle={() => setIsConfettiMode(!isConfettiMode)}
+          currentType={confettiType}
+          onTypeChange={setConfettiType}
+        />
       </div>
     </div>
   );

@@ -94,7 +94,7 @@ function FolderSection({
             boards.map((board) => (
               <div key={board.id} className="relative group">
                 <BoardCard board={board} onRejoin={onRejoin} />
-                <div className="absolute top-2 right-24 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <div className="absolute top-5 right-36 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                   <button
                     onClick={() =>
                       setShowMoveMenu(showMoveMenu === board.id ? null : board.id)

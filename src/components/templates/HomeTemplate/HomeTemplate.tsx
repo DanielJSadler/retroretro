@@ -38,7 +38,7 @@ export default function HomeTemplate({
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center py-8">
-          <h1 className="text-5xl font-bold text-white mb-2">Retro Board</h1>
+          <h1 className="text-5xl font-bold text-white mb-2">Retro Retro</h1>
           <p className="text-blue-100 text-lg">
             Collaborate on your team retrospective
           </p>

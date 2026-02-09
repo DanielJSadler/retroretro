@@ -10,6 +10,7 @@ interface TimerProps {
   onStart: (duration: number) => void;
   onPause: () => void;
   onReset: () => void;
+  onFinish?: () => void;
 }
 
 export default function Timer({
@@ -20,6 +21,7 @@ export default function Timer({
   onStart,
   onPause,
   onReset,
+  onFinish,
 }: TimerProps) {
   const [customDuration, setCustomDuration] = useState(5);
   const [remainingTime, setRemainingTime] = useState(0);
@@ -33,6 +35,7 @@ export default function Timer({
 
         if (remaining === 0) {
           clearInterval(interval);
+          if (onFinish) onFinish();
         }
       }, 100);
 
@@ -42,7 +45,7 @@ export default function Timer({
     } else if (!startedAt) {
       setRemainingTime(0);
     }
-  }, [startedAt, duration, isPaused, serverRemainingTime]);
+  }, [startedAt, duration, isPaused, serverRemainingTime, onFinish]);
 
   const formatTime = (ms: number) => {
     const seconds = Math.floor(ms / 1000);

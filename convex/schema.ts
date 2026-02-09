@@ -28,6 +28,12 @@ export default defineSchema({
     timerPaused: v.boolean(),
     timerRemainingTime: v.optional(v.number()),
     votesPerPerson: v.number(),
+    
+    // Music Player
+    musicCurrentSong: v.optional(v.string()),
+    musicStatus: v.optional(v.union(v.literal("playing"), v.literal("paused"))),
+    musicStartedAt: v.optional(v.number()),
+    musicSeekTime: v.optional(v.number()),
   }).index("by_creator", ["createdBy"]),
 
   // Sections within a board
@@ -84,4 +90,16 @@ export default defineSchema({
     .index("by_board", ["boardId"])
     .index("by_user_and_board", ["userId", "boardId"])
     .index("by_user_and_folder", ["userId", "folderId"]),
+
+  // Ephemeral confetti events
+  confetti: defineTable({
+    boardId: v.id("boards"),
+    senderId: v.id("users"),
+    type: v.string(),
+    originX: v.number(),
+    originY: v.number(),
+    angle: v.number(),
+    velocity: v.number(),
+    distance: v.number(),
+  }).index("by_board", ["boardId"]),
 });

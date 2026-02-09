@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Retro Board - Team Retrospective App',
+  title: 'Retro Retro - Team Retrospective App',
   description: 'A collaborative retrospective board for agile teams',
 };
 
