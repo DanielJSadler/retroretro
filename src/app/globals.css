@@ -64,7 +64,7 @@ h1 {
 
 h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
-  color: #7ee787;
+  color: #0d1117;
   letter-spacing: 1px;
   text-shadow: none; /* Explicitly remove shadow */
 }
@@ -86,11 +86,12 @@ h2, h3, h4, h5, h6 {
   background: #FFFDD0 !important; /* Cream background */
   border: 4px solid #7ee787; /* Neon border */
   box-shadow: 
-    8px 8px 0 rgba(0, 0, 0, 0.5),
+    8px 8px 0 rgba(124, 123, 123, 1),
     inset -4px -4px 0 rgba(0, 0, 0, 0.1),
     inset 4px 4px 0 rgba(255, 255, 255, 0.5);
   border-radius: 0 !important;
   color: #2F4F4F; /* Dark text inside cards */
+  z-index: 100000;
 }
 
 /* Input Styles */
