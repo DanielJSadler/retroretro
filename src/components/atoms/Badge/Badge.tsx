@@ -17,6 +17,7 @@ const phaseColors: Record<Phase, string> = {
   reveal: 'bg-green-100 text-green-800',
   voting: 'bg-orange-100 text-orange-800',
   discussion: 'bg-purple-100 text-purple-800',
+  finished: 'bg-gray-100 text-gray-800',
 };
 
 export default function Badge({

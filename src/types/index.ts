@@ -1,6 +1,6 @@
 export type NoteColor = 'yellow' | 'blue' | 'green' | 'red' | 'pink';
 
-export type Phase = 'writing' | 'reveal' | 'voting' | 'discussion';
+export type Phase = 'writing' | 'reveal' | 'voting' | 'discussion' | 'finished';
 
 export interface Section {
   id: string;

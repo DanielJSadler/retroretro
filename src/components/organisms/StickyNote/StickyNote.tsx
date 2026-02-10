@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { Note, NoteColor, Phase } from '@/types';
 
 interface StickyNoteProps {
@@ -56,7 +56,23 @@ export default function StickyNote({
     x: number;
     y: number;
   } | null>(null);
+  
   const noteRef = useRef<HTMLDivElement>(null);
+  const teaxtareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize function
+  const autoResize = () => {
+    if (teaxtareaRef.current) {
+      teaxtareaRef.current.style.height = 'auto';
+      teaxtareaRef.current.style.height = teaxtareaRef.current.scrollHeight + 'px';
+    }
+  };
+
+  useLayoutEffect(() => {
+    if (isEditing) {
+      autoResize();
+    }
+  }, [isEditing, editContent]);
 
   useEffect(() => {
     setEditContent(note.content);
@@ -65,6 +81,10 @@ export default function StickyNote({
   const handleMouseDown = (e: React.MouseEvent) => {
     if (isEditing || isReference) return;
 
+    // Only drag if clicking the note background, not buttons
+    if ((e.target as HTMLElement).tagName === 'BUTTON') return;
+    if ((e.target as HTMLElement).closest('button')) return;
+
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
@@ -72,17 +92,15 @@ export default function StickyNote({
     const noteRect = noteRef.current?.getBoundingClientRect();
 
     if (noteRect) {
-      // Store the offset from cursor to note's top-left corner (in screen coords)
       setDragOffset({
         x: e.clientX - noteRect.left,
         y: e.clientY - noteRect.top,
       });
-      // Start at current screen position
       setDragPosition({
         x: noteRect.left,
         y: noteRect.top,
       });
-      // Notify parent to show portal
+      
       if (onDragStart) {
         onDragStart(note, noteRect.left, noteRect.top);
       }
@@ -92,11 +110,9 @@ export default function StickyNote({
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging) {
-        // Track position in screen coordinates for smooth cross-section dragging
         const newX = e.clientX - dragOffset.x;
         const newY = e.clientY - dragOffset.y;
         setDragPosition({ x: newX, y: newY });
-        // Update portal position
         if (onDragMove) {
           onDragMove(newX, newY);
         }
@@ -106,7 +122,6 @@ export default function StickyNote({
     const handleMouseUp = (e: MouseEvent) => {
       if (isDragging) {
         if (onDragEnd) {
-          // Pass the note's visual screen position
           const noteX = e.clientX - dragOffset.x;
           const noteY = e.clientY - dragOffset.y;
           onDragEnd(note.id, noteX, noteY);
@@ -132,13 +147,21 @@ export default function StickyNote({
     setIsEditing(false);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSave();
+    }
+    if (e.key === 'Escape') {
+      setEditContent(note.content);
+      setIsEditing(false);
+    }
+  };
+
   if (!canSee) {
     return null;
   }
 
-  // When dragging, show ghost at original position (portal shows the dragging visual)
-  // For reference notes, use relative positioning
-  // Normal notes use percentage-based positioning
   const positionStyle = isReference
     ? { position: 'relative' as const }
     : {
@@ -150,90 +173,116 @@ export default function StickyNote({
   return (
     <div
       ref={noteRef}
-      className={`w-40 p-3 rounded-lg shadow-lg select-none z-20 ${
+      className={`absolute min-w-[200px] max-w-[300px] p-4 rounded-lg shadow-lg select-none z-20 flex flex-col gap-2 transition-colors ${
         colorClasses[note.color]
       } ${isDragging ? 'opacity-30 cursor-none' : ''} ${
-        !isDragging && !isReference ? 'cursor-grab' : ''
+        !isDragging && !isReference ? 'cursor-grab active:cursor-grabbing' : ''
       } ${isReference ? 'opacity-90 ring-2 ring-purple-400' : ''}`}
       style={positionStyle}
       onMouseDown={handleMouseDown}
     >
       {isReference && (
-        <div className="absolute -top-2 -left-2 bg-purple-600 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">
+        <div className="absolute -top-2 -left-2 bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow-sm">
           #{(note as Note & { rank?: number }).rank || ''}
         </div>
       )}
-      <div className="flex justify-between items-start mb-1">
-        <span className="text-xs font-semibold text-gray-700 truncate max-w-[70%]">
+      
+      {/* Header with Creator Name and Actions */}
+      <div className="flex justify-between items-start border-b border-black/5 pb-1 mb-1">
+        <span className="text-xs font-bold text-gray-700 truncate max-w-[60%] uppercase tracking-wider opacity-70">
           {note.createdBy}
         </span>
         {canEdit && !isReference && (
-          <div className="flex gap-1">
-            {!isEditing && (
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+             {/* Only show edit/delete when hovering (handled by group on parent if we added 'group' class, 
+                 but for touch devices keeping them visible or relying on click to edit is better. 
+                 Let's keep them always visible for now but subtle) */}
+          </div>
+        )}
+         {canEdit && !isReference && (
+            <div className="flex gap-1">
+              {!isEditing && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsEditing(true);
+                  }}
+                  className="text-gray-600 hover:text-gray-900 px-1 hover:bg-black/5 rounded"
+                  title="Edit"
+                >
+                  ✏️
+                </button>
+              )}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setIsEditing(true);
+                  onDelete(note.id);
                 }}
-                className="text-gray-600 hover:text-gray-800 text-xs"
+                className="text-gray-600 hover:text-red-600 px-1 hover:bg-black/5 rounded"
+                title="Delete"
               >
-                ✏️
+                🗑️
               </button>
-            )}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(note.id);
-              }}
-              className="text-gray-600 hover:text-red-600 text-xs"
-            >
-              🗑️
-            </button>
-          </div>
-        )}
+            </div>
+         )}
       </div>
 
+      {/* Content Area */}
       {isEditing ? (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2 relative">
           <textarea
+            ref={teaxtareaRef}
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
-            className="w-full p-1 text-xs bg-white/50 rounded resize-none focus:outline-none focus:ring-2 focus:ring-gray-400"
-            rows={3}
+            onKeyDown={handleKeyDown}
+            className="w-full min-h-[80px] p-2 text-base md:text-lg bg-white/40 border border-black/10 rounded-md focus:outline-none focus:ring-2 focus:ring-black/20 focus:bg-white/60 resize-none overflow-hidden leading-snug placeholder-gray-500/50"
+            rows={1}
+            placeholder="Write your thought..."
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
             autoFocus
           />
-          <div className="flex gap-1">
-            <button
-              onClick={handleSave}
-              className="flex-1 px-1 py-0.5 bg-green-500 text-white text-xs rounded hover:bg-green-600"
-            >
-              Save
-            </button>
+          <div className="flex gap-2 justify-end">
+             <span className="text-[10px] text-gray-500 self-center mr-auto">
+               Enter to save, Shift+Enter for new line
+             </span>
             <button
               onClick={() => {
-                setEditContent(note.content);
-                setIsEditing(false);
+                 setEditContent(note.content);
+                 setIsEditing(false);
               }}
-              className="flex-1 px-1 py-0.5 bg-gray-500 text-white text-xs rounded hover:bg-gray-600"
+              className="px-3 py-1 bg-black/10 text-gray-800 text-xs font-bold rounded hover:bg-black/20 transition-colors"
             >
               Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              className="px-3 py-1 bg-black/80 text-white text-xs font-bold rounded hover:bg-black transition-colors shadow-sm"
+            >
+              Save
             </button>
           </div>
         </div>
       ) : (
-        <div className="text-xs text-gray-800 whitespace-pre-wrap break-words overflow-hidden max-h-16">
+        <div 
+            className="text-base md:text-lg text-gray-900 whitespace-pre-wrap break-words leading-snug font-medium cursor-text"
+            onDoubleClick={(e) => {
+                if (canEdit && !isReference) {
+                    e.stopPropagation();
+                    setIsEditing(true);
+                }
+            }}
+        >
           {note.content}
         </div>
       )}
 
-      {/* Vote section - visible in voting and discussion phases */}
+      {/* Vote section */}
       {(currentPhase === 'voting' || currentPhase === 'discussion') && (
-        <div className="flex items-center justify-between mt-2 pt-1 border-t border-gray-300/50">
-          <div className="flex items-center gap-1">
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-black/10">
+          <div className="flex items-center gap-1.5 bg-white/30 px-2 py-1 rounded-full">
             <span className="text-sm">👍</span>
-            <span className="font-bold text-gray-800 text-sm">
+            <span className="font-bold text-gray-900 text-sm">
               {note.votes?.length || 0}
             </span>
           </div>
@@ -245,13 +294,13 @@ export default function StickyNote({
                   onVote(note.id);
                 }}
                 onMouseDown={(e) => e.stopPropagation()}
-                className={`px-2 py-0.5 rounded-full text-xs font-medium transition-all ${
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all shadow-sm border ${
                   hasVoted
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                    : 'bg-white/70 text-gray-700 hover:bg-white'
+                    ? 'bg-blue-600 text-white border-blue-700 hover:bg-blue-700'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                 }`}
               >
-                {hasVoted ? '✓' : 'Vote'}
+                {hasVoted ? '✓ Voted' : '+ Vote'}
               </button>
             )}
             {showCreateAction && onCreateAction && (
@@ -261,7 +310,7 @@ export default function StickyNote({
                   onCreateAction(note);
                 }}
                 onMouseDown={(e) => e.stopPropagation()}
-                className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-600 text-white hover:bg-purple-700 transition-all"
+                className="px-3 py-1 rounded-full text-xs font-bold bg-purple-600 text-white hover:bg-purple-700 transition-all shadow-sm border border-purple-800"
                 title="Create action from this note"
               >
                 → Action

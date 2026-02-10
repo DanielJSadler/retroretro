@@ -21,7 +21,8 @@ export default defineSchema({
       v.literal("writing"),
       v.literal("reveal"),
       v.literal("voting"),
-      v.literal("discussion")
+      v.literal("discussion"),
+      v.literal("finished")
     ),
     timerDuration: v.number(),
     timerStartedAt: v.optional(v.number()),

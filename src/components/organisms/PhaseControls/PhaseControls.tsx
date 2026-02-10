@@ -17,6 +17,7 @@ const phases: { value: Phase; label: string; description: string }[] = [
   { value: 'reveal', label: 'Reveal', description: 'All notes visible' },
   { value: 'voting', label: 'Voting', description: 'Vote on notes' },
   { value: 'discussion', label: 'Discussion', description: 'Group & discuss' },
+  { value: 'finished', label: 'Finished', description: 'Board is locked' },
 ];
 
 export default function PhaseControls({

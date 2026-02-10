@@ -22,6 +22,10 @@ export const create = mutation({
     const userId = await auth.getUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
+    const board = await ctx.db.get(boardId);
+    if (!board) throw new Error("Board not found");
+    if (board.phase === "finished") throw new Error("Board is finished");
+
     return await ctx.db.insert("notes", {
       boardId,
       sectionId,
@@ -59,6 +63,9 @@ export const update = mutation({
     const note = await ctx.db.get(noteId);
     if (!note) throw new Error("Note not found");
 
+    const board = await ctx.db.get(note.boardId);
+    if (board && board.phase === "finished") throw new Error("Board is finished");
+
     // Only the creator can edit the note
     if (note.createdBy !== userId) {
       throw new Error("Not authorized to edit this note");
@@ -84,6 +91,9 @@ export const remove = mutation({
 
     const note = await ctx.db.get(noteId);
     if (!note) throw new Error("Note not found");
+
+    const board = await ctx.db.get(note.boardId);
+    if (board && board.phase === "finished") throw new Error("Board is finished");
 
     // Only the creator can delete the note
     if (note.createdBy !== userId) {

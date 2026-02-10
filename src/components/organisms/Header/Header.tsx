@@ -31,7 +31,13 @@ const phaseConfig: Record<Phase, { color: string; message: string }> = {
     color: 'bg-purple-600',
     message: '💬 Discussion - Top voted → Actions',
   },
+  finished: {
+    color: 'bg-gray-600',
+    message: '🏁 Finished - Board is locked',
+  },
 };
+
+import { useStandardMode } from '@/context/StandardModeContext';
 
 export default function Header({
   session,
@@ -42,11 +48,16 @@ export default function Header({
   onLeave,
   getRemainingVotes,
 }: HeaderProps) {
-  const config = phaseConfig[session.phase];
+  const config = session.phase === 'finished' 
+    ? { color: 'bg-gray-800', message: '🏁 Finished - Board is locked' }
+    : phaseConfig[session.phase];
+    
   const votingMessage =
     session.phase === 'voting'
       ? `${config.message} - ${getRemainingVotes()} votes left`
       : config.message;
+
+  const { isStandardMode, toggleStandardMode } = useStandardMode();
 
   return (
     <header className="bg-white shadow-md flex-shrink-0">
@@ -61,10 +72,12 @@ export default function Header({
           </button>
           <div>
             <h2 className="text-xl font-bold text-black">{session.name}</h2>
-            <p className="text-xs text-gray-600">
-              Phase:{' '}
-              <span className="font-semibold capitalize">{session.phase}</span>
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-gray-600">
+                Phase:{' '}
+                <span className="font-semibold capitalize">{session.phase}</span>
+              </p>
+            </div>
           </div>
         </div>
 
@@ -76,6 +89,13 @@ export default function Header({
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={toggleStandardMode}
+            className="text-xs px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded text-gray-700 font-medium"
+            title={isStandardMode ? "Switch to Retro Mode" : "Switch to Standard Mode"}
+          >
+            {isStandardMode ? "👾 Retro" : "👔 Standard"}
+          </button>
           <Button
             onClick={onCopyLink}
             variant="secondary"

@@ -2,6 +2,7 @@
 
 import { ThemeProvider } from '@/context/ThemeProvider';
 import { ConvexClientProvider } from '@/components/providers/ConvexClientProvider';
+import { StandardModeProvider } from '@/context/StandardModeContext';
 
 export default function ClientLayout({
   children,
@@ -11,7 +12,9 @@ export default function ClientLayout({
   return (
     <ConvexClientProvider>
       <ThemeProvider>
-        {children}
+        <StandardModeProvider>
+          {children}
+        </StandardModeProvider>
       </ThemeProvider>
     </ConvexClientProvider>
   );

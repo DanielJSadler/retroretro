@@ -66,6 +66,7 @@ export default function BoardPage() {
   const pauseTimer = useMutation(api.timer.pause);
   const resetTimer = useMutation(api.timer.reset);
   const pauseMusic = useMutation(api.music.pause);
+  const leaveBoard = useMutation(api.participants.leave);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -79,7 +80,13 @@ export default function BoardPage() {
     if (isAuthenticated && boardId) {
       joinBoard({ boardId: boardId as Id<"boards"> });
     }
-  }, [isAuthenticated, boardId, joinBoard]);
+    
+    return () => {
+      if (isAuthenticated && boardId) {
+        leaveBoard({ boardId: boardId as Id<"boards"> });
+      }
+    };
+  }, [isAuthenticated, boardId, joinBoard, leaveBoard]);
 
   // Heartbeat to keep participant active
   useEffect(() => {
@@ -91,6 +98,7 @@ export default function BoardPage() {
 
     return () => clearInterval(interval);
   }, [isAuthenticated, boardId, heartbeat]);
+  
 
   // Handle wheel zoom
   useEffect(() => {
@@ -766,7 +774,7 @@ export default function BoardPage() {
               <div className="text-xs font-semibold text-gray-700 mb-1">
                 {draggingNote.note.createdBy}
               </div>
-              <div className="text-xs text-gray-800">
+              <div className="text-xs text-gray-800 overflow-hidden text-ellipsis line-clamp-4">
                 {draggingNote.note.content}
               </div>
             </div>

@@ -207,7 +207,8 @@ export const updatePhase = mutation({
       v.literal("writing"),
       v.literal("reveal"),
       v.literal("voting"),
-      v.literal("discussion")
+      v.literal("discussion"),
+      v.literal("finished")
     ),
     votesPerPerson: v.optional(v.number()),
     resetVotes: v.optional(v.boolean()),
