@@ -5,15 +5,25 @@ interface BoardCanvasProps {
   zoom?: number
   onZoomChange?: (newZoom: number) => void
   boardRef?: React.RefObject<HTMLDivElement | null>
+  isFollowing?: boolean
 }
 
-export default function BoardCanvas({ children, zoom = 1, onZoomChange, boardRef }: BoardCanvasProps) {
+export default function BoardCanvas({
+  children,
+  zoom = 1,
+  onZoomChange,
+  boardRef,
+  isFollowing = false,
+}: BoardCanvasProps) {
   // Handle wheel zoom
   useEffect(() => {
     const mainEl = document.getElementById('board-main')
     if (!mainEl) return
 
     const handleWheel = (e: WheelEvent) => {
+      // Don't allow zooming if following someone else's zoom
+      if (isFollowing) return
+
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault()
         if (onZoomChange) {
@@ -24,13 +34,16 @@ export default function BoardCanvas({ children, zoom = 1, onZoomChange, boardRef
 
     mainEl.addEventListener('wheel', handleWheel, { passive: false })
     return () => mainEl.removeEventListener('wheel', handleWheel)
-  }, [zoom, onZoomChange])
+  }, [zoom, onZoomChange, isFollowing])
 
   return (
-    <main id="board-main" className="flex-1 p-3 overflow-auto">
+    <main
+      id="board-main"
+      className={`flex-1 p-3 ${isFollowing ? 'overflow-hidden pointer-events-none' : 'overflow-auto'}`}
+    >
       <div
         ref={boardRef}
-        className="flex gap-3 origin-top-left transition-transform duration-100 relative w-max"
+        className={`flex gap-3 origin-top-left transition-transform duration-100 relative w-max ${isFollowing ? 'pointer-events-auto' : ''}`}
         style={{
           transform: `scale(${zoom})`,
         }}

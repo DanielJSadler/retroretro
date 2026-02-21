@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Header from '@/components/organisms/Header'
 import Sidebar from '@/components/organisms/Sidebar'
@@ -25,6 +25,7 @@ export default function BoardPage() {
   const [justDragged, setJustDragged] = useState(false)
   const [draggingNote, setDraggingNote] = useState<{ note: Note; x: number; y: number } | null>(null)
   const [highlightedUser, setHighlightedUser] = useState<string | null>(null)
+  const [followedUser, setFollowedUser] = useState<string | null>(null)
 
   const [isConfettiMode, setIsConfettiMode] = useState(false)
   const [confettiType, setConfettiType] = useState<'basic' | 'stars' | 'fireworks' | 'random'>('basic')
@@ -54,6 +55,38 @@ export default function BoardPage() {
     setTimeout(() => setJustDragged(false), 100)
     await notesManager.handleNoteDragEnd(noteId, clientX, clientY, sectionRefs)
   }
+
+  // Follow logic
+  useEffect(() => {
+    if (!followedUser || !session || !getCursorPositions) return
+
+    const followingParticipant = getCursorPositions.find(p => p.name === followedUser)
+    if (followingParticipant) {
+      // Sync zoom if it's drifting significantly
+      if (followingParticipant.zoom && Math.abs(followingParticipant.zoom - zoom) > 0.05) {
+        requestAnimationFrame(() => {
+          setZoom(followingParticipant.zoom!)
+        })
+      }
+
+      // Sync viewport scrolling
+      const mainEl = document.getElementById('board-main')
+      if (mainEl) {
+        if (
+          followingParticipant.viewportX !== undefined &&
+          Math.abs(mainEl.scrollLeft - followingParticipant.viewportX) > 5
+        ) {
+          mainEl.scrollTo({ left: followingParticipant.viewportX, behavior: 'smooth' })
+        }
+        if (
+          followingParticipant.viewportY !== undefined &&
+          Math.abs(mainEl.scrollTop - followingParticipant.viewportY) > 5
+        ) {
+          mainEl.scrollTo({ top: followingParticipant.viewportY, behavior: 'smooth' })
+        }
+      }
+    }
+  }, [followedUser, session, getCursorPositions, zoom])
 
   if (authLoading) return <LoadingScreen message="Loading..." />
   if (!isAuthenticated) return null
@@ -110,9 +143,11 @@ export default function BoardPage() {
           musicSeekTime={board?.musicSeekTime}
           highlightedUser={highlightedUser}
           setHighlightedUser={setHighlightedUser}
+          followedUser={followedUser}
+          setFollowedUser={setFollowedUser}
         />
 
-        <BoardCanvas zoom={zoom} onZoomChange={setZoom} boardRef={boardRef}>
+        <BoardCanvas zoom={zoom} onZoomChange={setZoom} boardRef={boardRef} isFollowing={!!followedUser}>
           <CursorOverlay
             cursors={getCursorPositions}
             currentUserId={(currentUser as any)?._id || (currentUser as any)?.id}

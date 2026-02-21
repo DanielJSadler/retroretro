@@ -8,6 +8,8 @@ interface ParticipantListProps {
   currentUser: string
   highlightedUser?: string | null
   setHighlightedUser?: (userId: string | null) => void
+  followedUser?: string | null
+  setFollowedUser?: (userId: string | null) => void
 }
 
 export default function ParticipantList({
@@ -15,6 +17,8 @@ export default function ParticipantList({
   currentUser,
   highlightedUser,
   setHighlightedUser,
+  followedUser,
+  setFollowedUser,
 }: ParticipantListProps) {
   // Sort participants so active ones are at the top, and current user is very first
   const sortedParticipants = [...participants].sort((a, b) => {
@@ -82,6 +86,40 @@ export default function ParticipantList({
                 <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
               </svg>
             </button>
+
+            {participant.name !== currentUser && (
+              <button
+                onClick={e => {
+                  e.stopPropagation()
+                  if (setFollowedUser) {
+                    setFollowedUser(followedUser === participant.name ? null : participant.name)
+                  }
+                }}
+                className={`p-1.5 rounded-md border shrink-0 transition-all ${
+                  followedUser === participant.name
+                    ? 'bg-blue-500 text-white border-blue-600 shadow-sm hover:bg-blue-600'
+                    : 'bg-white text-gray-400 border-gray-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200'
+                }`}
+                title={followedUser === participant.name ? 'Stop following' : `Follow ${participant.name}`}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M22 17l-5-5-5 5" />
+                  <path d="M17 12v10" />
+                  <circle cx="7" cy="6" r="4" />
+                  <path d="M12 9A4 4 0 0 0 4 9" />
+                </svg>
+              </button>
+            )}
           </div>
         ))}
       </div>

@@ -28,6 +28,8 @@ interface SidebarProps {
   musicSeekTime?: number
   highlightedUser?: string | null
   setHighlightedUser?: (userId: string | null) => void
+  followedUser?: string | null
+  setFollowedUser?: (userId: string | null) => void
 }
 
 export default function Sidebar({
@@ -49,6 +51,8 @@ export default function Sidebar({
   musicSeekTime,
   highlightedUser,
   setHighlightedUser,
+  followedUser,
+  setFollowedUser,
 }: SidebarProps) {
   return (
     <aside
@@ -62,6 +66,8 @@ export default function Sidebar({
           currentUser={currentUser}
           highlightedUser={highlightedUser}
           setHighlightedUser={setHighlightedUser}
+          followedUser={followedUser}
+          setFollowedUser={setFollowedUser}
         />
 
         <PhaseControls

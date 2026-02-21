@@ -105,8 +105,11 @@ export const updateCursor = mutation({
     boardId: v.id('boards'),
     cursorX: v.number(),
     cursorY: v.number(),
+    viewportX: v.optional(v.number()),
+    viewportY: v.optional(v.number()),
+    zoom: v.optional(v.number()),
   },
-  handler: async (ctx, { boardId, cursorX, cursorY }) => {
+  handler: async (ctx, { boardId, cursorX, cursorY, viewportX, viewportY, zoom }) => {
     const userId = await auth.getUserId(ctx)
     if (!userId) return
 
@@ -119,6 +122,9 @@ export const updateCursor = mutation({
       await ctx.db.patch(participant._id, {
         cursorX,
         cursorY,
+        viewportX,
+        viewportY,
+        zoom,
       })
     }
   },
@@ -138,6 +144,9 @@ export const getCursorPositions = query({
       name: p.name,
       cursorX: p.cursorX,
       cursorY: p.cursorY,
+      viewportX: p.viewportX,
+      viewportY: p.viewportY,
+      zoom: p.zoom,
     }))
   },
 })
