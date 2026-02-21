@@ -26,6 +26,8 @@ interface SidebarProps {
   musicStatus?: 'playing' | 'paused'
   musicStartedAt?: number
   musicSeekTime?: number
+  highlightedUser?: string | null
+  setHighlightedUser?: (userId: string | null) => void
 }
 
 export default function Sidebar({
@@ -45,6 +47,8 @@ export default function Sidebar({
   musicStatus,
   musicStartedAt,
   musicSeekTime,
+  highlightedUser,
+  setHighlightedUser,
 }: SidebarProps) {
   return (
     <aside
@@ -53,7 +57,12 @@ export default function Sidebar({
       }`}
     >
       <div className="flex-1 p-3 space-y-3">
-        <ParticipantList participants={session.participants} currentUser={currentUser} />
+        <ParticipantList
+          participants={session.participants}
+          currentUser={currentUser}
+          highlightedUser={highlightedUser}
+          setHighlightedUser={setHighlightedUser}
+        />
 
         <PhaseControls
           currentPhase={session.phase}

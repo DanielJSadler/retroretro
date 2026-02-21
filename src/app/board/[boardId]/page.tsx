@@ -24,6 +24,7 @@ export default function BoardPage() {
   const [zoom, setZoom] = useState(1)
   const [justDragged, setJustDragged] = useState(false)
   const [draggingNote, setDraggingNote] = useState<{ note: Note; x: number; y: number } | null>(null)
+  const [highlightedUser, setHighlightedUser] = useState<string | null>(null)
 
   const [isConfettiMode, setIsConfettiMode] = useState(false)
   const [confettiType, setConfettiType] = useState<'basic' | 'stars' | 'fireworks' | 'random'>('basic')
@@ -107,6 +108,8 @@ export default function BoardPage() {
           musicStatus={board?.musicStatus}
           musicStartedAt={board?.musicStartedAt}
           musicSeekTime={board?.musicSeekTime}
+          highlightedUser={highlightedUser}
+          setHighlightedUser={setHighlightedUser}
         />
 
         <BoardCanvas zoom={zoom} onZoomChange={setZoom} boardRef={boardRef}>
@@ -140,6 +143,7 @@ export default function BoardPage() {
               zoom={zoom}
               justDragged={justDragged}
               sectionRef={el => sectionRefs.current.set(section.id, el)}
+              highlightedUser={highlightedUser}
             />
           ))}
         </BoardCanvas>

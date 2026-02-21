@@ -113,6 +113,8 @@ export const get = query({
     // Get creator info
     const creator = await ctx.db.get(board.createdBy)
 
+    const thirtySecondsAgo = Date.now() - 30000
+
     return {
       ...board,
       folderId: myParticipation?.folderId,
@@ -134,7 +136,7 @@ export const get = query({
       participants: participants.map(p => ({
         id: p._id,
         name: p.name,
-        isActive: p.isActive,
+        isActive: p.lastSeen > thirtySecondsAgo,
         lastSeen: p.lastSeen,
       })),
       creatorName: creator?.name ?? 'Unknown',

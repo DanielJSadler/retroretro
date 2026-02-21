@@ -36,6 +36,7 @@ interface BoardSectionProps {
   zoom: number
   justDragged: boolean
   sectionRef: (el: HTMLDivElement | null) => void
+  highlightedUser?: string | null
 }
 
 export default function BoardSection({
@@ -59,6 +60,7 @@ export default function BoardSection({
   zoom,
   justDragged,
   sectionRef,
+  highlightedUser,
 }: BoardSectionProps) {
   const [creatingInSection, setCreatingInSection] = useState<string | null>(null)
   const [newNoteContent, setNewNoteContent] = useState('')
@@ -93,6 +95,11 @@ export default function BoardSection({
     setNewNoteContent('')
   }
 
+  const isNoteDimmed = (createdBy: string) => {
+    if (!highlightedUser) return false
+    return createdBy !== highlightedUser
+  }
+
   return (
     <div
       className={`rounded-lg border-2 ${sectionColorClasses[section.color]} flex flex-col shrink-0`}
@@ -118,7 +125,11 @@ export default function BoardSection({
               <div
                 key={`ref-${refNote.id}`}
                 className="sticky-note pointer-events-auto"
-                style={{ position: 'relative' }}
+                style={{
+                  position: 'relative',
+                  opacity: isNoteDimmed(refNote.createdBy) ? 0.25 : 1,
+                  transition: 'opacity 0.2s ease-in-out',
+                }}
               >
                 <StickyNote
                   note={refNote}
@@ -142,9 +153,18 @@ export default function BoardSection({
         {visibleNotes.map(note => {
           const visibility = canSeeNote(note)
           const isGhost = visibility === 'ghost'
+          const dimmed = isNoteDimmed(note.createdBy)
 
           return (
-            <div key={note.id} className="sticky-note">
+            <div
+              key={note.id}
+              className="sticky-note"
+              style={{
+                opacity: dimmed && !isGhost ? 0.25 : 1,
+                transition: 'opacity 0.2s ease-in-out',
+                pointerEvents: dimmed ? 'none' : 'auto',
+              }}
+            >
               {isGhost ? (
                 <div
                   className="w-40 p-3 rounded-lg shadow-md bg-gray-200 border-2 border-dashed border-gray-400 opacity-50"
