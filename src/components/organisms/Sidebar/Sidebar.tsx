@@ -83,7 +83,7 @@ export default function Sidebar({
         </div>
 
         <ZoomControls zoom={zoom} onZoomIn={onZoomIn} onZoomOut={onZoomOut} onReset={onZoomReset} />
-        <iframe src="https://staging.p3bbl3.com/" height={500} className="w-full" />
+        <iframe src="https://demo.p3bbl3.com/" height={500} width={'100%'} />
       </div>
 
       {/* Music Player at bottom */}
