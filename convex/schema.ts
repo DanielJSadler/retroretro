@@ -49,6 +49,10 @@ export default defineSchema({
       v.literal("pink")
     ),
     order: v.number(),
+    height: v.optional(v.number()),
+    width: v.optional(v.number()),
+    x: v.optional(v.number()),
+    y: v.optional(v.number()),
   }).index("by_board", ["boardId"]),
 
   // Sticky notes
@@ -87,6 +91,8 @@ export default defineSchema({
     isActive: v.boolean(),
     lastSeen: v.number(),
     folderId: v.optional(v.id("folders")),
+    cursorX: v.optional(v.number()),
+    cursorY: v.optional(v.number()),
   })
     .index("by_board", ["boardId"])
     .index("by_user_and_board", ["userId", "boardId"])
@@ -103,4 +109,5 @@ export default defineSchema({
     velocity: v.number(),
     distance: v.number(),
   }).index("by_board", ["boardId"]),
+
 });

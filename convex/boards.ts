@@ -1,12 +1,13 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { auth } from "./auth";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 // Get boards that the current user has participated in
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await auth.getUserId(ctx);
+    const userId = await getAuthUserId(ctx)
     if (!userId) return [];
 
     // Get all boards where the user is a participant
@@ -63,7 +64,7 @@ export const list = query({
 export const get = query({
   args: { boardId: v.id("boards") },
   handler: async (ctx, { boardId }) => {
-    const userId = await auth.getUserId(ctx);
+    const userId = await getAuthUserId(ctx)
     if (!userId) return null;
 
     const board = await ctx.db.get(boardId);
@@ -160,8 +161,8 @@ export const create = mutation({
       })
     ),
   },
-  handler: async (ctx, { name, sections }) => {
-    const userId = await auth.getUserId(ctx);
+  handler: async (ctx, { name, sections }) => { 
+    const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
     const user = await ctx.db.get(userId);
@@ -214,7 +215,7 @@ export const updatePhase = mutation({
     resetVotes: v.optional(v.boolean()),
   },
   handler: async (ctx, { boardId, phase, votesPerPerson, resetVotes }) => {
-    const userId = await auth.getUserId(ctx);
+    const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
     const updates: Record<string, unknown> = { phase };
@@ -242,7 +243,7 @@ export const updatePhase = mutation({
 export const remove = mutation({
   args: { boardId: v.id("boards") },
   handler: async (ctx, { boardId }) => {
-    const userId = await auth.getUserId(ctx);
+    const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
     // Delete all related data
@@ -294,7 +295,7 @@ export const moveToFolder = mutation({
     folderId: v.union(v.id("folders"), v.null()),
   },
   handler: async (ctx, { boardId, folderId }) => {
-    const userId = await auth.getUserId(ctx);
+    const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
     const board = await ctx.db.get(boardId);
