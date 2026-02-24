@@ -87,6 +87,7 @@ export default function ParticipantList({
               </svg>
             </button>
 
+            {/* Follow button disabled to save on usage
             {participant.name !== currentUser && (
               <button
                 onClick={e => {
@@ -120,6 +121,7 @@ export default function ParticipantList({
                 </svg>
               </button>
             )}
+            */}
           </div>
         ))}
       </div>

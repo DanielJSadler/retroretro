@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useRef } from 'react'
-import { useQuery, useMutation } from 'convex/react'
-import { api } from '../../convex/_generated/api'
-import { Id } from '../../convex/_generated/dataModel'
+import type React from 'react'
+// import { useCallback, useEffect, useRef } from 'react'
+// import { useQuery, useMutation } from 'convex/react'
+// import { api } from '../../convex/_generated/api'
+// import { Id } from '../../convex/_generated/dataModel'
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function useCursorTracking(boardId: string, boardRef: React.RefObject<HTMLDivElement | null>, zoom: number) {
+  /*
   const getCursorPositions = useQuery(
     api.participants.getCursorPositions,
     boardId ? { boardId: boardId as Id<'boards'> } : 'skip'
@@ -90,5 +93,11 @@ export function useCursorTracking(boardId: string, boardRef: React.RefObject<HTM
 
   return {
     getCursorPositions,
+  }
+  */
+
+  return {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    getCursorPositions: undefined as any[] | undefined,
   }
 }
