@@ -10,8 +10,14 @@ export function useBoardSync(boardId: string) {
   const router = useRouter()
   const { isAuthenticated, isLoading: authLoading } = useConvexAuth()
 
-  // Queries
-  const board = useQuery(api.boards.get, boardId ? { boardId: boardId as Id<'boards'> } : 'skip')
+  const skipArgs = !boardId ? ('skip' as const) : undefined
+  const boardArgs = boardId ? { boardId: boardId as Id<'boards'> } : ('skip' as const)
+
+  // Split queries — each only re-fires when its own tables change
+  const board = useQuery(api.boards.get, boardArgs) // boards + sections
+  const notes = useQuery(api.notes.getByBoard, boardArgs) // notes + votes
+  const participants = useQuery(api.participants.getActive, boardArgs) // participants
+
   const currentUser = useQuery(api.users.current)
 
   // Mutations
@@ -47,43 +53,44 @@ export function useBoardSync(boardId: string) {
     return () => clearInterval(interval)
   }, [isAuthenticated, boardId, heartbeat])
 
-  // Format Session
-  const session: Session | null = board
-    ? {
-        id: board._id,
-        name: board.name,
-        createdAt: board._creationTime,
-        createdBy: board.creatorName,
-        phase: board.phase,
-        notes: board.notes.map(
-          (n: {
-            id: Id<'notes'>
-            content: string
-            color: NoteColor
-            createdBy: string
-            position: { x: number; y: number }
-            sectionId: Id<'sections'>
-            createdAt: number
-            votes: Id<'users'>[]
-          }) => ({
-            ...n,
-            id: n.id as string,
-            sectionId: n.sectionId as string,
-            votes: n.votes.map(v => v as string),
-          })
-        ),
-        participants: board.participants,
-        sections: board.sections.map((s: { id: Id<'sections'>; name: string; color: NoteColor }) => ({
-          ...s,
-          id: s.id as string,
-        })),
-        timerDuration: board.timerDuration,
-        timerStartedAt: board.timerStartedAt,
-        timerPaused: board.timerPaused,
-        timerRemainingTime: board.timerRemainingTime,
-        votesPerPerson: board.votesPerPerson,
-      }
-    : null
+  // Format Session — merge data from separate queries
+  const session: Session | null =
+    board && notes && participants
+      ? {
+          id: board._id,
+          name: board.name,
+          createdAt: board._creationTime,
+          createdBy: board.creatorName,
+          phase: board.phase,
+          notes: notes.map(
+            (n: {
+              id: Id<'notes'>
+              content: string
+              color: NoteColor
+              createdBy: string
+              position: { x: number; y: number }
+              sectionId: Id<'sections'>
+              createdAt: number
+              votes: Id<'users'>[]
+            }) => ({
+              ...n,
+              id: n.id as string,
+              sectionId: n.sectionId as string,
+              votes: n.votes.map(v => v as string),
+            })
+          ),
+          participants: participants,
+          sections: board.sections.map((s: { id: Id<'sections'>; name: string; color: NoteColor }) => ({
+            ...s,
+            id: s.id as string,
+          })),
+          timerDuration: board.timerDuration,
+          timerStartedAt: board.timerStartedAt,
+          timerPaused: board.timerPaused,
+          timerRemainingTime: board.timerRemainingTime,
+          votesPerPerson: board.votesPerPerson,
+        }
+      : null
 
   const currentUserName = currentUser?.name ?? ''
 

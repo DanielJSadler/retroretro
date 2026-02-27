@@ -58,7 +58,7 @@ export const list = query({
   },
 })
 
-// Get a single board with all its data
+// Get a single board with its metadata and sections (no notes or participants)
 export const get = query({
   args: { boardId: v.id('boards') },
   handler: async (ctx, { boardId }) => {
@@ -77,43 +77,14 @@ export const get = query({
     // Sort sections by order
     sections.sort((a, b) => a.order - b.order)
 
-    // Get notes with vote counts
-    const notes = await ctx.db
-      .query('notes')
-      .withIndex('by_board', q => q.eq('boardId', boardId))
-      .collect()
-
-    const notesWithVotes = await Promise.all(
-      notes.map(async note => {
-        const votes = await ctx.db
-          .query('votes')
-          .withIndex('by_note', q => q.eq('noteId', note._id))
-          .collect()
-
-        // Get creator name
-        const creator = await ctx.db.get(note.createdBy)
-
-        return {
-          ...note,
-          votes: votes.map(v => v.userId),
-          creatorName: creator?.name ?? 'Unknown',
-        }
-      })
-    )
-
-    // Get active participants
-    const participants = await ctx.db
+    // Find current user's participant record (for folderId only)
+    const myParticipation = await ctx.db
       .query('participants')
-      .withIndex('by_board', q => q.eq('boardId', boardId))
-      .collect()
-
-    // Find current user's participant record
-    const myParticipation = participants.find(p => p.userId === userId)
+      .withIndex('by_user_and_board', q => q.eq('userId', userId).eq('boardId', boardId))
+      .first()
 
     // Get creator info
     const creator = await ctx.db.get(board.createdBy)
-
-    const thirtySecondsAgo = Date.now() - 30000
 
     return {
       ...board,
@@ -122,22 +93,6 @@ export const get = query({
         id: s._id,
         name: s.name,
         color: s.color,
-      })),
-      notes: notesWithVotes.map(n => ({
-        id: n._id,
-        content: n.content,
-        color: n.color,
-        createdBy: n.creatorName,
-        position: { x: n.positionX, y: n.positionY },
-        sectionId: n.sectionId,
-        createdAt: n._creationTime,
-        votes: n.votes,
-      })),
-      participants: participants.map(p => ({
-        id: p._id,
-        name: p.name,
-        isActive: p.lastSeen > thirtySecondsAgo,
-        lastSeen: p.lastSeen,
       })),
       creatorName: creator?.name ?? 'Unknown',
     }
