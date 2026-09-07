@@ -174,6 +174,16 @@ export const updatePhase = mutation({
 
     await ctx.db.patch(boardId, updates)
 
+    if (phase === 'voting') {
+      const statuses = await ctx.db
+        .query('votingStatus')
+        .withIndex('by_board', q => q.eq('boardId', boardId))
+        .collect()
+      for (const status of statuses) {
+        await ctx.db.delete(status._id)
+      }
+    }
+
     // If moving to discussion phase, ensure an actions section exists
     if (phase === 'discussion') {
       const sections = await ctx.db
@@ -261,6 +271,25 @@ export const remove = mutation({
 })
 
 // Move a board to a folder (or remove from folder) for the current user
+export const remove2 = mutation({
+  args: { boardId: v.id('boards') },
+  handler: async (ctx, { boardId }) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error('Not authenticated')
+
+    // Get the participant record for this user and board
+    const participant = await ctx.db
+      .query('participants')
+      .withIndex('by_user_and_board', q => q.eq('userId', userId).eq('boardId', boardId))
+      .first()
+
+    if (!participant) throw new Error('Not a participant of this board')
+
+    // Update the participant record to remove folder association
+    await ctx.db.patch(participant._id, { folderId: undefined })
+  },
+})
+
 export const moveToFolder = mutation({
   args: {
     boardId: v.id('boards'),

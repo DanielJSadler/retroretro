@@ -15,6 +15,8 @@ export const getByBoard = query({
       .withIndex('by_board', q => q.eq('boardId', boardId))
       .collect()
 
+    const board = await ctx.db.get(boardId)
+
     return await Promise.all(
       notes.map(async note => {
         const votes = await ctx.db
@@ -32,7 +34,10 @@ export const getByBoard = query({
           position: { x: note.positionX, y: note.positionY },
           sectionId: note.sectionId,
           createdAt: note._creationTime,
-          votes: votes.map(v => v.userId),
+          votes:
+            board?.phase === 'voting'
+              ? votes.filter(v => v.userId === userId).map(v => v.userId)
+              : votes.map(v => v.userId),
         }
       })
     )

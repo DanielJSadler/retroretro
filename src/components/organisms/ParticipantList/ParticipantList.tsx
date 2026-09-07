@@ -6,6 +6,7 @@ import { Participant } from '@/types'
 interface ParticipantListProps {
   participants: Participant[]
   currentUser: string
+  currentUserId?: string
   highlightedUser?: string | null
   setHighlightedUser?: (userId: string | null) => void
   followedUser?: string | null
@@ -15,6 +16,7 @@ interface ParticipantListProps {
 export default function ParticipantList({
   participants,
   currentUser,
+  currentUserId,
   highlightedUser,
   setHighlightedUser,
   followedUser,
@@ -22,8 +24,8 @@ export default function ParticipantList({
 }: ParticipantListProps) {
   // Sort participants so active ones are at the top, and current user is very first
   const sortedParticipants = [...participants].sort((a, b) => {
-    if (a.name === currentUser) return -1
-    if (b.name === currentUser) return 1
+    if (a.userId === currentUserId) return -1
+    if (b.userId === currentUserId) return 1
     if (a.isActive && !b.isActive) return -1
     if (!a.isActive && b.isActive) return 1
     return a.name.localeCompare(b.name)
@@ -42,7 +44,7 @@ export default function ParticipantList({
             className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
               highlightedUser === participant.name
                 ? 'bg-yellow-100 border border-yellow-300'
-                : participant.name === currentUser
+              : participant.userId === currentUserId
                   ? 'bg-blue-100 border border-blue-300 hover:bg-blue-200'
                   : 'bg-gray-50 hover:bg-gray-200 border border-transparent'
             } ${!participant.isActive && participant.name !== currentUser ? 'opacity-60' : ''}`}
@@ -53,7 +55,7 @@ export default function ParticipantList({
               }`}
             />
             <span className="text-sm font-medium truncate">{participant.name}</span>
-            {participant.name === currentUser && <span className="text-xs text-blue-600 shrink-0">(You)</span>}
+            {participant.userId === currentUserId && <span className="text-xs text-blue-600 shrink-0">(You)</span>}
 
             <button
               onClick={e => {

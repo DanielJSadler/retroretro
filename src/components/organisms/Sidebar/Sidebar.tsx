@@ -10,6 +10,7 @@ import ZoomControls from '@/components/molecules/ZoomControls'
 interface SidebarProps {
   session: Session
   currentUser: string
+  currentUserId?: string
   collapsed: boolean
   zoom: number
   onPhaseChange: (phase: Session['phase'], options?: { votesPerPerson?: number; resetVotes?: boolean }) => void
@@ -17,6 +18,7 @@ interface SidebarProps {
   onPauseTimer: () => void
   onResetTimer: () => void
   onTimerFinish?: () => void
+  onVotingDone?: (isDone: boolean) => void
   onZoomIn: () => void
   onZoomOut: () => void
   onZoomReset: () => void
@@ -29,6 +31,7 @@ interface SidebarProps {
 export default function Sidebar({
   session,
   currentUser,
+  currentUserId,
   collapsed,
   zoom,
   onPhaseChange,
@@ -36,6 +39,7 @@ export default function Sidebar({
   onPauseTimer,
   onResetTimer,
   onTimerFinish,
+  onVotingDone,
   onZoomIn,
   onZoomOut,
   onZoomReset,
@@ -60,11 +64,26 @@ export default function Sidebar({
           <ParticipantList
             participants={session.participants}
             currentUser={currentUser}
+            currentUserId={currentUserId}
             highlightedUser={highlightedUser}
             setHighlightedUser={setHighlightedUser}
             followedUser={followedUser}
             setFollowedUser={setFollowedUser}
           />
+
+          {session.phase === 'voting' && session.votingStatus && onVotingDone && (
+            <button
+              type="button"
+              onClick={() => onVotingDone(!session.votingStatus?.currentUserDone)}
+              className={`w-full rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                session.votingStatus.currentUserDone
+                  ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-orange-100 text-orange-800 hover:bg-orange-200'
+              }`}
+            >
+              {session.votingStatus.currentUserDone ? '✓ Voting complete' : 'I’m done voting'}
+            </button>
+          )}
 
           <PhaseControls
             currentPhase={session.phase}

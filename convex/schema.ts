@@ -71,6 +71,15 @@ export default defineSchema({
     .index('by_note', ['noteId'])
     .index('by_user_and_board', ['userId', 'boardId']),
 
+  votingStatus: defineTable({
+    boardId: v.id('boards'),
+    userId: v.id('users'),
+    isDone: v.boolean(),
+    updatedAt: v.number(),
+  })
+    .index('by_board', ['boardId'])
+    .index('by_user_and_board', ['userId', 'boardId']),
+
   // Participants currently viewing a board
   participants: defineTable({
     boardId: v.id('boards'),

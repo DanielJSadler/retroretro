@@ -22,6 +22,7 @@ export interface Note {
 
 export interface Participant {
   id: string
+  userId: string
   name: string
   isActive: boolean
   lastSeen: number
@@ -44,6 +45,11 @@ export interface Session {
   timerPaused: boolean
   timerRemainingTime?: number
   votesPerPerson: number // Number of votes each participant gets
+  votingStatus?: {
+    total: number
+    completed: number
+    currentUserDone: boolean
+  }
 }
 
 // Summary info for listing boards (doesn't include full notes data)

@@ -34,11 +34,17 @@ export default function BoardPage() {
   const boardRef = useRef<HTMLDivElement>(null)
   const sectionRefs = useRef<Map<string, HTMLDivElement | null>>(new Map())
 
-  const { board, session, currentUser, currentUserName, isAuthenticated, authLoading } = useBoardSync(boardId)
+  const { board, session, currentUser, currentUserName, isAuthenticated, authLoading, setVotingDone } = useBoardSync(boardId)
   const { getCursorPositions } = useCursorTracking(boardId, boardRef, zoom)
   const { handlePhaseChange, handleStartTimer, handlePauseTimer, handleResetTimer, handleLeave } =
     useBoardControls(boardId)
   const notesManager = useNotes(boardId, session, currentUser)
+
+  useEffect(() => {
+    if (session?.phase === 'reveal') {
+      setTimerExpired(false)
+    }
+  }, [session?.phase])
 
   const handleNoteDragStart = (note: Note, x: number, y: number) => {
     setDraggingNote({ note, x, y })
@@ -123,13 +129,16 @@ export default function BoardPage() {
         }}
         onLeave={handleLeave}
         getRemainingVotes={notesManager.getRemainingVotes}
+        votingStatus={session.votingStatus}
         timerExpired={timerExpired}
+        onDismissTimer={() => setTimerExpired(false)}
       />
 
       <div className="flex-1 flex overflow-hidden">
         <Sidebar
           session={session}
           currentUser={currentUserName}
+          currentUserId={currentUser?.id}
           collapsed={sidebarCollapsed}
           zoom={zoom}
           onPhaseChange={handlePhaseChange}
@@ -143,6 +152,7 @@ export default function BoardPage() {
             handleResetTimer()
           }}
           onTimerFinish={() => setTimerExpired(true)}
+          onVotingDone={setVotingDone}
           onZoomIn={() => setZoom(z => Math.min(2, z + 0.1))}
           onZoomOut={() => setZoom(z => Math.max(0.25, z - 0.1))}
           onZoomReset={() => setZoom(1)}

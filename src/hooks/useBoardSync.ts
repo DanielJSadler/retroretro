@@ -17,6 +17,7 @@ export function useBoardSync(boardId: string) {
   const board = useQuery(api.boards.get, boardArgs) // boards + sections
   const notes = useQuery(api.notes.getByBoard, boardArgs) // notes + votes
   const participants = useQuery(api.participants.getActive, boardArgs) // participants
+  const votingStatus = useQuery(api.participants.getVotingStatus, boardArgs)
 
   const currentUser = useQuery(api.users.current)
 
@@ -24,6 +25,7 @@ export function useBoardSync(boardId: string) {
   const joinBoard = useMutation(api.participants.join)
   const heartbeat = useMutation(api.participants.heartbeat)
   const leaveBoard = useMutation(api.participants.leave)
+  const setVotingDoneMutation = useMutation(api.participants.setVotingDone)
 
   // Auth Redirect
   useEffect(() => {
@@ -55,7 +57,7 @@ export function useBoardSync(boardId: string) {
 
   // Format Session — merge data from separate queries
   const session: Session | null =
-    board && notes && participants
+    board && notes && participants && votingStatus !== undefined
       ? {
           id: board._id,
           name: board.name,
@@ -89,16 +91,22 @@ export function useBoardSync(boardId: string) {
           timerPaused: board.timerPaused,
           timerRemainingTime: board.timerRemainingTime,
           votesPerPerson: board.votesPerPerson,
+          votingStatus: votingStatus ?? undefined,
         }
       : null
 
   const currentUserName = currentUser?.name ?? ''
+
+  const setVotingDone = async (isDone: boolean) => {
+    await setVotingDoneMutation({ boardId: boardId as Id<'boards'>, isDone })
+  }
 
   return {
     board,
     session,
     currentUser,
     currentUserName,
+    setVotingDone,
     isAuthenticated,
     authLoading,
   }

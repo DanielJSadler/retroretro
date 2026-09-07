@@ -12,7 +12,9 @@ interface HeaderProps {
   onCopyLink: () => void;
   onLeave: () => void;
   getRemainingVotes: () => number;
+  votingStatus?: Session['votingStatus'];
   timerExpired?: boolean;
+  onDismissTimer?: () => void;
 }
 
 const phaseConfig: Record<Phase, { color: string; message: string }> = {
@@ -48,7 +50,9 @@ export default function Header({
   onCopyLink,
   onLeave,
   getRemainingVotes,
+  votingStatus,
   timerExpired = false,
+  onDismissTimer,
 }: HeaderProps) {
   const config = session.phase === 'finished' 
     ? { color: 'bg-gray-800', message: '🏁 Finished - Board is locked' }
@@ -86,12 +90,27 @@ export default function Header({
         {/* Phase Banner */}
         <div className="flex items-center gap-2">
           {timerExpired && (
-            <div className="px-3 py-2 rounded-lg bg-red-600 text-white font-bold text-sm animate-pulse" role="alert">
-              ⏰ Time&apos;s up
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-600 text-white font-bold text-sm animate-pulse" role="alert">
+              <span>⏰ Time&apos;s up</span>
+              {onDismissTimer && (
+                <button
+                  type="button"
+                  onClick={onDismissTimer}
+                  className="rounded bg-white/20 px-1.5 py-0.5 text-xs font-semibold hover:bg-white/30"
+                  aria-label="Dismiss timer alert"
+                >
+                  Dismiss
+                </button>
+              )}
             </div>
           )}
           <div className={`px-4 py-2 rounded-lg text-white font-semibold text-sm ${config.color}`}>
             {votingMessage}
+            {session.phase === 'voting' && votingStatus && (
+              <span className="ml-2 font-normal">
+                · {votingStatus.completed}/{votingStatus.total} finished
+              </span>
+            )}
           </div>
         </div>
 

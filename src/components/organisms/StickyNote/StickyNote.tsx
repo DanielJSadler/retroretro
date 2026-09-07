@@ -283,7 +283,7 @@ export default function StickyNote({
           <div className="flex items-center gap-1.5 bg-white/30 px-2 py-1 rounded-full">
             <span className="text-sm">👍</span>
             <span className="font-bold text-gray-900 text-sm">
-              {note.votes?.length || 0}
+              {currentPhase === 'voting' ? (hasVoted ? 'Your vote' : 'Not voted') : note.votes?.length || 0}
             </span>
           </div>
           <div className="flex gap-1">
