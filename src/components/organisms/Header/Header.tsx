@@ -12,6 +12,7 @@ interface HeaderProps {
   onCopyLink: () => void;
   onLeave: () => void;
   getRemainingVotes: () => number;
+  timerExpired?: boolean;
 }
 
 const phaseConfig: Record<Phase, { color: string; message: string }> = {
@@ -47,6 +48,7 @@ export default function Header({
   onCopyLink,
   onLeave,
   getRemainingVotes,
+  timerExpired = false,
 }: HeaderProps) {
   const config = session.phase === 'finished' 
     ? { color: 'bg-gray-800', message: '🏁 Finished - Board is locked' }
@@ -82,10 +84,15 @@ export default function Header({
         </div>
 
         {/* Phase Banner */}
-        <div
-          className={`px-4 py-2 rounded-lg text-white font-semibold text-sm ${config.color}`}
-        >
-          {votingMessage}
+        <div className="flex items-center gap-2">
+          {timerExpired && (
+            <div className="px-3 py-2 rounded-lg bg-red-600 text-white font-bold text-sm animate-pulse" role="alert">
+              ⏰ Time&apos;s up
+            </div>
+          )}
+          <div className={`px-4 py-2 rounded-lg text-white font-semibold text-sm ${config.color}`}>
+            {votingMessage}
+          </div>
         </div>
 
         <div className="flex items-center gap-3">

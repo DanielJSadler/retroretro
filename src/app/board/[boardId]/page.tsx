@@ -26,6 +26,7 @@ export default function BoardPage() {
   const [draggingNote, setDraggingNote] = useState<{ note: Note; x: number; y: number } | null>(null)
   const [highlightedUser, setHighlightedUser] = useState<string | null>(null)
   const [followedUser, setFollowedUser] = useState<string | null>(null)
+  const [timerExpired, setTimerExpired] = useState(false)
 
   const [isConfettiMode, setIsConfettiMode] = useState(false)
   const [confettiType, setConfettiType] = useState<'basic' | 'stars' | 'fireworks' | 'random'>('basic')
@@ -122,6 +123,7 @@ export default function BoardPage() {
         }}
         onLeave={handleLeave}
         getRemainingVotes={notesManager.getRemainingVotes}
+        timerExpired={timerExpired}
       />
 
       <div className="flex-1 flex overflow-hidden">
@@ -131,16 +133,19 @@ export default function BoardPage() {
           collapsed={sidebarCollapsed}
           zoom={zoom}
           onPhaseChange={handlePhaseChange}
-          onStartTimer={handleStartTimer}
+          onStartTimer={duration => {
+            setTimerExpired(false)
+            handleStartTimer(duration)
+          }}
           onPauseTimer={handlePauseTimer}
-          onResetTimer={handleResetTimer}
+          onResetTimer={() => {
+            setTimerExpired(false)
+            handleResetTimer()
+          }}
+          onTimerFinish={() => setTimerExpired(true)}
           onZoomIn={() => setZoom(z => Math.min(2, z + 0.1))}
           onZoomOut={() => setZoom(z => Math.max(0.25, z - 0.1))}
           onZoomReset={() => setZoom(1)}
-          musicCurrentSong={board?.musicCurrentSong}
-          musicStatus={board?.musicStatus}
-          musicStartedAt={board?.musicStartedAt}
-          musicSeekTime={board?.musicSeekTime}
           highlightedUser={highlightedUser}
           setHighlightedUser={setHighlightedUser}
           followedUser={followedUser}

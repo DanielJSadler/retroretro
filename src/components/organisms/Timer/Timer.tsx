@@ -25,9 +25,11 @@ export default function Timer({
 }: TimerProps) {
   const [customDuration, setCustomDuration] = useState(5);
   const [remainingTime, setRemainingTime] = useState(0);
+  const [hasFinished, setHasFinished] = useState(false);
 
   useEffect(() => {
     if (startedAt && !isPaused) {
+      setHasFinished(false);
       const interval = setInterval(() => {
         const elapsed = Date.now() - startedAt;
         const remaining = Math.max(0, duration - elapsed);
@@ -35,7 +37,32 @@ export default function Timer({
 
         if (remaining === 0) {
           clearInterval(interval);
-          if (onFinish) onFinish();
+          setHasFinished(true);
+          if (onFinish) {
+            onFinish();
+          }
+
+          // Play a short, noticeable alert when the timer ends. The visual
+          // alert remains available when the browser blocks audio.
+          try {
+            const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+            if (AudioContextClass) {
+              const context = new AudioContextClass();
+              const oscillator = context.createOscillator();
+              const gain = context.createGain();
+              oscillator.frequency.value = 880;
+              oscillator.type = 'sine';
+              gain.gain.setValueAtTime(0.001, context.currentTime);
+              gain.gain.exponentialRampToValueAtTime(0.25, context.currentTime + 0.02);
+              gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.45);
+              oscillator.connect(gain);
+              gain.connect(context.destination);
+              oscillator.start();
+              oscillator.stop(context.currentTime + 0.45);
+            }
+          } catch {
+            // The banner is the fallback when audio is unavailable.
+          }
         }
       }, 100);
 
@@ -44,6 +71,7 @@ export default function Timer({
       setRemainingTime(serverRemainingTime);
     } else if (!startedAt) {
       setRemainingTime(0);
+      setHasFinished(false);
     }
   }, [startedAt, duration, isPaused, serverRemainingTime, onFinish]);
 
@@ -138,7 +166,7 @@ export default function Timer({
         )}
       </div>
 
-      {remainingTime === 0 && (isRunning || isPaused) && (
+      {hasFinished && (
         <div className="mt-3 text-center text-red-600 font-semibold">
           Time&apos;s Up!
         </div>

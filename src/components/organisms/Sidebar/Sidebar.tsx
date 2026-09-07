@@ -6,7 +6,6 @@ import ParticipantList from '@/components/organisms/ParticipantList'
 import PhaseControls from '@/components/organisms/PhaseControls'
 import Timer from '@/components/organisms/Timer'
 import ZoomControls from '@/components/molecules/ZoomControls'
-import MusicPlayer from '@/components/organisms/MusicPlayer'
 
 interface SidebarProps {
   session: Session
@@ -21,11 +20,6 @@ interface SidebarProps {
   onZoomIn: () => void
   onZoomOut: () => void
   onZoomReset: () => void
-  // Music Props
-  musicCurrentSong?: string
-  musicStatus?: 'playing' | 'paused'
-  musicStartedAt?: number
-  musicSeekTime?: number
   highlightedUser?: string | null
   setHighlightedUser?: (userId: string | null) => void
   followedUser?: string | null
@@ -45,10 +39,6 @@ export default function Sidebar({
   onZoomIn,
   onZoomOut,
   onZoomReset,
-  musicCurrentSong,
-  musicStatus,
-  musicStartedAt,
-  musicSeekTime,
   highlightedUser,
   setHighlightedUser,
   followedUser,
@@ -160,14 +150,6 @@ export default function Sidebar({
           </div>
         </div>
 
-        {/* Music Player at bottom */}
-        {/* <MusicPlayer
-        boardId={session.id}
-        currentSong={musicCurrentSong}
-        status={musicStatus}
-        startedAt={musicStartedAt}
-        seekTime={musicSeekTime}
-      /> */}
       </aside>
     </>
   )
