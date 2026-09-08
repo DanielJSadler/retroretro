@@ -337,6 +337,7 @@ export default function BoardSection({
                   onCreateAction={onCreateAction}
                   showCreateAction={true}
                   isReference={true}
+                  onElementChange={(noteId, element) => onNoteElementChange(`reference:${noteId}`, element)}
                 />
               </div>
             ))}

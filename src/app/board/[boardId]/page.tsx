@@ -253,8 +253,12 @@ export default function BoardPage() {
       .map((note, index) => ({ ...note, rank: index + 1 }))
   }
 
+  const topVotedNotes = getTopVotedNotes()
+  const referencedNoteIds = new Set(topVotedNotes.map(note => note.id))
   const actionLinks = session.notes.flatMap(note =>
-    note.sourceNoteId ? [{ actionNoteId: note.id, sourceNoteId: note.sourceNoteId }] : []
+    note.sourceNoteId && referencedNoteIds.has(note.sourceNoteId)
+      ? [{ actionNoteId: note.id, sourceNoteId: `reference:${note.sourceNoteId}` }]
+      : []
   )
 
   return (
@@ -337,7 +341,7 @@ export default function BoardPage() {
               visibleNotes={session.notes.filter(
                 note => note.sectionId === section.id && notesManager.canSeeNote(note) !== 'hidden'
               )}
-              topVotedRefs={notesManager.isActionsSection(section) ? getTopVotedNotes() : []}
+              topVotedRefs={notesManager.isActionsSection(section) ? topVotedNotes : []}
               sessionPhase={session.phase}
               getRemainingVotes={notesManager.getRemainingVotes}
               hasVotedForNote={notesManager.hasVotedForNote}
