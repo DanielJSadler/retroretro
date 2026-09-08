@@ -82,7 +82,7 @@ export default function ActionConnectorLayer({
           const action = noteRefs.current.get(link.actionNoteId)
           if (!source || !action) return []
 
-          const { start, end } = getEdgePoints(source.getBoundingClientRect(), action.getBoundingClientRect(), boardRect, zoom)
+          const { start, end } = getEdgePoints(action.getBoundingClientRect(), source.getBoundingClientRect(), boardRect, zoom)
           return [{ actionNoteId: link.actionNoteId, start, end }]
         })
       )
