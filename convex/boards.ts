@@ -3,6 +3,10 @@ import { mutation, query } from './_generated/server'
 import { auth } from './auth'
 import { getAuthUserId } from '@convex-dev/auth/server'
 
+const DEFAULT_SECTION_WIDTH = 900
+const DEFAULT_SECTION_HEIGHT = 650
+const SECTION_GAP = 60
+
 // Get boards that the current user has participated in
 export const list = query({
   args: {},
@@ -93,10 +97,10 @@ export const get = query({
         id: s._id,
         name: s.name,
         color: s.color,
-        width: s.width ?? 1500,
-        height: s.height ?? 2000,
-        x: s.x ?? s.order * 1520,
-        y: s.y ?? 0,
+        width: s.width ?? DEFAULT_SECTION_WIDTH,
+        height: s.height ?? DEFAULT_SECTION_HEIGHT,
+        x: s.x ?? (s.order % 2) * (DEFAULT_SECTION_WIDTH + SECTION_GAP),
+        y: s.y ?? Math.floor(s.order / 2) * (DEFAULT_SECTION_HEIGHT + SECTION_GAP),
       })),
       creatorName: creator?.name ?? 'Unknown',
     }
@@ -137,6 +141,10 @@ export const create = mutation({
         name: sections[i].name,
         color: sections[i].color,
         order: i,
+        width: DEFAULT_SECTION_WIDTH,
+        height: DEFAULT_SECTION_HEIGHT,
+        x: (i % 2) * (DEFAULT_SECTION_WIDTH + SECTION_GAP),
+        y: Math.floor(i / 2) * (DEFAULT_SECTION_HEIGHT + SECTION_GAP),
       })
     }
 
@@ -207,6 +215,10 @@ export const updatePhase = mutation({
           name: 'Action items',
           color: 'blue',
           order: maxOrder + 1,
+          width: DEFAULT_SECTION_WIDTH,
+          height: DEFAULT_SECTION_HEIGHT,
+          x: ((maxOrder + 1) % 2) * (DEFAULT_SECTION_WIDTH + SECTION_GAP),
+          y: Math.floor((maxOrder + 1) / 2) * (DEFAULT_SECTION_HEIGHT + SECTION_GAP),
         })
       }
     }
@@ -248,8 +260,8 @@ export const resizeSection = mutation({
 
     const nextWidth = Math.max(600, Math.min(4000, Math.round(width)))
     const nextHeight = Math.max(500, Math.min(4000, Math.round(height)))
-    const previousWidth = section.width ?? 1500
-    const previousHeight = section.height ?? 2000
+    const previousWidth = section.width ?? DEFAULT_SECTION_WIDTH
+    const previousHeight = section.height ?? DEFAULT_SECTION_HEIGHT
 
     // Notes use percentage coordinates. Counter-scale them so their visual
     // positions remain fixed while the section edge moves.
