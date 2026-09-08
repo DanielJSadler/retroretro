@@ -58,6 +58,8 @@ export default defineSchema({
     createdBy: v.id('users'),
     positionX: v.number(),
     positionY: v.number(),
+    isDraft: v.optional(v.boolean()),
+    draftUpdatedAt: v.optional(v.number()),
   })
     .index('by_board', ['boardId'])
     .index('by_section', ['sectionId']),

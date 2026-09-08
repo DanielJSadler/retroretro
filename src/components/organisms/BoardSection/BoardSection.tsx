@@ -20,12 +20,13 @@ interface BoardSectionProps {
   hasVotedForNote: (note: Note) => boolean
   canSeeNote: (note: Note) => 'full' | 'ghost' | 'hidden'
   canEditNote: (note: Note) => boolean
-  onAddNote: (
-    content: string,
+  onCreateDraft: (
     color: NoteColor,
     sectionId: string,
-    position?: { x: number; y: number }
-  ) => Promise<void>
+    position: { x: number; y: number }
+  ) => Promise<{ id: string; position: { x: number; y: number } }>
+  onUpdateDraft: (id: string, content: string) => Promise<void>
+  onFinalizeDraft: (id: string, content: string) => Promise<void>
   onUpdateNote: (id: string, updates: Partial<Note>) => Promise<void>
   onDeleteNote: (id: string) => Promise<void>
   onVote: (noteId: string) => Promise<void>
@@ -57,7 +58,9 @@ export default function BoardSection({
   hasVotedForNote,
   canSeeNote,
   canEditNote,
-  onAddNote,
+  onCreateDraft,
+  onUpdateDraft,
+  onFinalizeDraft,
   onUpdateNote,
   onDeleteNote,
   onVote,
@@ -76,9 +79,17 @@ export default function BoardSection({
 }: BoardSectionProps) {
   const [creatingInSection, setCreatingInSection] = useState<string | null>(null)
   const [newNoteContent, setNewNoteContent] = useState('')
+  const [newNotePosition, setNewNotePosition] = useState<{ x: number; y: number } | null>(null)
+  const [draftId, setDraftId] = useState<string | null>(null)
+  const [isCreatingDraft, setIsCreatingDraft] = useState(false)
+  const [isFinalizingDraft, setIsFinalizingDraft] = useState(false)
   const [sectionSize, setSectionSize] = useState({ width: section.width, height: section.height })
   const resizeStart = useRef<{ x: number; y: number; width: number; height: number } | null>(null)
   const resizeLatest = useRef(sectionSize)
+  const draftRequestId = useRef(0)
+  const contentRef = useRef('')
+  const draftUpdateTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const finalizeWhenReady = useRef(false)
 
   useEffect(() => {
     if (!resizeStart.current) {
@@ -87,6 +98,12 @@ export default function BoardSection({
       setSectionSize(nextSize)
     }
   }, [section.width, section.height])
+
+  useEffect(() => {
+    return () => {
+      if (draftUpdateTimeout.current) clearTimeout(draftUpdateTimeout.current)
+    }
+  }, [])
 
   const handleResizeStart = (e: React.PointerEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -122,33 +139,115 @@ export default function BoardSection({
   }
 
   const handleSectionClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (justDragged) return
+    if (justDragged || creatingInSection) return
     if ((e.target as HTMLElement).closest('.sticky-note')) return
 
     const rect = e.currentTarget.getBoundingClientRect()
     const xPercent = ((e.clientX - rect.left) / rect.width) * 100
     const yPercent = ((e.clientY - rect.top) / rect.height) * 100
 
-    setCreatingInSection(section.id)
-    setNewNoteContent('')
-    ;(window as unknown as { _newNotePosition: { x: number; y: number } })._newNotePosition = {
+    const requestedPosition = {
       x: Math.max(2, Math.min(85, xPercent)),
       y: Math.max(2, Math.min(85, yPercent)),
+    }
+    const requestId = draftRequestId.current + 1
+    draftRequestId.current = requestId
+    setCreatingInSection(section.id)
+    setNewNoteContent('')
+    contentRef.current = ''
+    setNewNotePosition(requestedPosition)
+    setDraftId(null)
+    setIsCreatingDraft(true)
+    finalizeWhenReady.current = false
+
+    void onCreateDraft(section.color, section.id, requestedPosition)
+      .then(async draft => {
+        if (draftRequestId.current !== requestId) {
+          await onDeleteNote(draft.id)
+          return
+        }
+
+        setDraftId(draft.id)
+        setNewNotePosition(draft.position)
+        setIsCreatingDraft(false)
+
+        if (finalizeWhenReady.current) {
+          await finalizeExistingDraft(draft.id, contentRef.current)
+        } else if (contentRef.current) {
+          await onUpdateDraft(draft.id, contentRef.current)
+        }
+      })
+      .catch(error => {
+        console.error('Failed to start draft:', error)
+        if (draftRequestId.current === requestId) {
+          resetDraftState()
+        }
+      })
+  }
+
+  const resetDraftState = () => {
+    if (draftUpdateTimeout.current) clearTimeout(draftUpdateTimeout.current)
+    draftUpdateTimeout.current = null
+    setCreatingInSection(null)
+    setNewNoteContent('')
+    setNewNotePosition(null)
+    setDraftId(null)
+    setIsCreatingDraft(false)
+    setIsFinalizingDraft(false)
+    contentRef.current = ''
+    finalizeWhenReady.current = false
+  }
+
+  const finalizeExistingDraft = async (id: string, content: string) => {
+    if (!content.trim()) {
+      await handleCancelDraft(id)
+      return
+    }
+
+    if (draftUpdateTimeout.current) clearTimeout(draftUpdateTimeout.current)
+    setIsFinalizingDraft(true)
+    try {
+      await onFinalizeDraft(id, content)
+      resetDraftState()
+    } catch (error) {
+      console.error('Failed to save draft:', error)
+      setIsFinalizingDraft(false)
     }
   }
 
   const handleCreateNote = async () => {
     if (!newNoteContent.trim()) {
-      setCreatingInSection(null)
+      await handleCancelDraft()
       return
     }
-    const position = (window as unknown as { _newNotePosition?: { x: number; y: number } })._newNotePosition || {
-      x: 50,
-      y: 50,
+    if (!draftId) {
+      finalizeWhenReady.current = true
+      return
     }
-    await onAddNote(newNoteContent, section.color, section.id, position)
-    setCreatingInSection(null)
-    setNewNoteContent('')
+    await finalizeExistingDraft(draftId, newNoteContent)
+  }
+
+  const handleCancelDraft = async (id = draftId) => {
+    draftRequestId.current += 1
+    resetDraftState()
+    if (id) {
+      try {
+        await onDeleteNote(id)
+      } catch (error) {
+        console.error('Failed to discard draft:', error)
+      }
+    }
+  }
+
+  const handleDraftContentChange = (content: string) => {
+    setNewNoteContent(content)
+    contentRef.current = content
+    if (!draftId) return
+
+    if (draftUpdateTimeout.current) clearTimeout(draftUpdateTimeout.current)
+    draftUpdateTimeout.current = setTimeout(() => {
+      void onUpdateDraft(draftId, content).catch(error => console.error('Failed to update draft:', error))
+    }, 300)
   }
 
   const isNoteDimmed = (createdBy: string) => {
@@ -236,7 +335,7 @@ export default function BoardSection({
           </div>
         )}
 
-        {visibleNotes.map(note => {
+        {visibleNotes.filter(note => note.id !== draftId).map(note => {
           const visibility = canSeeNote(note)
           const isGhost = visibility === 'ghost'
           const dimmed = isNoteDimmed(note.createdBy)
@@ -263,7 +362,9 @@ export default function BoardSection({
                   <div className="flex justify-between items-start mb-1">
                     <span className="text-xs font-semibold text-gray-500 truncate">{note.createdBy}</span>
                   </div>
-                  <div className="text-xs text-gray-400 italic">✍️ Writing...</div>
+                  <div className="text-xs text-gray-400 italic">
+                    {note.isDraft ? '✍️ Writing...' : '🔒 Private note'}
+                  </div>
                 </div>
               ) : (
                 <StickyNote
@@ -292,14 +393,14 @@ export default function BoardSection({
           <div
             className="absolute bg-white rounded-lg shadow-xl p-3 z-50 w-48"
             style={{
-              left: `${(window as unknown as { _newNotePosition?: { x: number; y: number } })._newNotePosition?.x || 20}%`,
-              top: `${(window as unknown as { _newNotePosition?: { x: number; y: number } })._newNotePosition?.y || 20}%`,
+              left: `${newNotePosition?.x ?? 20}%`,
+              top: `${newNotePosition?.y ?? 20}%`,
             }}
             onClick={e => e.stopPropagation()}
           >
             <textarea
               value={newNoteContent}
-              onChange={e => setNewNoteContent(e.target.value)}
+              onChange={e => handleDraftContentChange(e.target.value)}
               placeholder="Type your note..."
               className="w-full p-2 text-sm border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows={3}
@@ -310,19 +411,21 @@ export default function BoardSection({
                   handleCreateNote()
                 }
                 if (e.key === 'Escape') {
-                  setCreatingInSection(null)
+                  void handleCancelDraft()
                 }
               }}
             />
             <div className="flex gap-2 mt-2">
               <button
                 onClick={handleCreateNote}
+                disabled={isCreatingDraft || isFinalizingDraft}
                 className="flex-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
               >
-                Add (Enter)
+                {isCreatingDraft ? 'Starting...' : isFinalizingDraft ? 'Saving...' : 'Add (Enter)'}
               </button>
               <button
-                onClick={() => setCreatingInSection(null)}
+                onClick={() => void handleCancelDraft()}
+                disabled={isFinalizingDraft}
                 className="flex-1 px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300"
               >
                 Cancel (Esc)

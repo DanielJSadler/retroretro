@@ -294,7 +294,9 @@ export default function BoardPage() {
               hasVotedForNote={notesManager.hasVotedForNote}
               canSeeNote={notesManager.canSeeNote}
               canEditNote={notesManager.canEditNote}
-              onAddNote={notesManager.handleAddNote}
+              onCreateDraft={notesManager.handleCreateDraft}
+              onUpdateDraft={notesManager.handleUpdateDraft}
+              onFinalizeDraft={notesManager.handleFinalizeDraft}
               onUpdateNote={notesManager.handleUpdateNote}
               onDeleteNote={notesManager.handleDeleteNote}
               onVote={notesManager.handleVote}

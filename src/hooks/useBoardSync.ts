@@ -70,9 +70,11 @@ export function useBoardSync(boardId: string) {
               content: string
               color: NoteColor
               createdBy: string
+              createdById: Id<'users'>
               position: { x: number; y: number }
               sectionId: Id<'sections'>
               createdAt: number
+              isDraft: boolean
               votes: Id<'users'>[]
             }) => ({
               ...n,

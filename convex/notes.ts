@@ -3,6 +3,41 @@ import { mutation, query } from './_generated/server'
 import { auth } from './auth'
 import { getAuthUserId } from '@convex-dev/auth/server'
 
+const NOTE_WIDTH_PERCENT = 18
+const NOTE_HEIGHT_PERCENT = 20
+
+function findAvailablePosition(
+  notes: { positionX: number; positionY: number }[],
+  requestedPosition: { x: number; y: number }
+) {
+  const requested = {
+    x: Math.max(2, Math.min(80, requestedPosition.x)),
+    y: Math.max(2, Math.min(80, requestedPosition.y)),
+  }
+  const candidates = [requested]
+
+  for (let y = 2; y <= 80; y += NOTE_HEIGHT_PERCENT) {
+    for (let x = 2; x <= 80; x += NOTE_WIDTH_PERCENT) {
+      candidates.push({ x, y })
+    }
+  }
+
+  candidates.sort(
+    (a, b) =>
+      Math.hypot(a.x - requested.x, a.y - requested.y) - Math.hypot(b.x - requested.x, b.y - requested.y)
+  )
+
+  return (
+    candidates.find(candidate =>
+      notes.every(
+        note =>
+          Math.abs(note.positionX - candidate.x) >= NOTE_WIDTH_PERCENT ||
+          Math.abs(note.positionY - candidate.y) >= NOTE_HEIGHT_PERCENT
+      )
+    ) ?? requested
+  )
+}
+
 // Get all notes for a board with their votes
 export const getByBoard = query({
   args: { boardId: v.id('boards') },
@@ -28,12 +63,14 @@ export const getByBoard = query({
 
         return {
           id: note._id,
-          content: note.content,
+          content: board?.phase === 'writing' && note.createdBy !== userId ? '' : note.content,
           color: note.color,
           createdBy: creator?.name ?? 'Unknown',
+          createdById: note.createdBy,
           position: { x: note.positionX, y: note.positionY },
           sectionId: note.sectionId,
           createdAt: note._creationTime,
+          isDraft: note.isDraft ?? false,
           votes:
             board?.phase === 'voting'
               ? votes.filter(v => v.userId === userId).map(v => v.userId)
@@ -70,7 +107,78 @@ export const create = mutation({
       createdBy: userId,
       positionX,
       positionY,
+      isDraft: false,
     })
+  },
+})
+
+export const createDraft = mutation({
+  args: {
+    boardId: v.id('boards'),
+    sectionId: v.id('sections'),
+    color: v.union(v.literal('yellow'), v.literal('blue'), v.literal('green'), v.literal('red'), v.literal('pink')),
+    positionX: v.number(),
+    positionY: v.number(),
+  },
+  handler: async (ctx, { boardId, sectionId, color, positionX, positionY }) => {
+    const userId = await auth.getUserId(ctx)
+    if (!userId) throw new Error('Not authenticated')
+
+    const board = await ctx.db.get(boardId)
+    if (!board) throw new Error('Board not found')
+    if (board.phase === 'finished') throw new Error('Board is finished')
+
+    const section = await ctx.db.get(sectionId)
+    if (!section || section.boardId !== boardId) throw new Error('Section not found')
+
+    const notes = await ctx.db
+      .query('notes')
+      .withIndex('by_section', q => q.eq('sectionId', sectionId))
+      .collect()
+    const position = findAvailablePosition(notes, { x: positionX, y: positionY })
+    const noteId = await ctx.db.insert('notes', {
+      boardId,
+      sectionId,
+      content: '',
+      color,
+      createdBy: userId,
+      positionX: position.x,
+      positionY: position.y,
+      isDraft: true,
+      draftUpdatedAt: Date.now(),
+    })
+
+    return { id: noteId, position }
+  },
+})
+
+export const updateDraft = mutation({
+  args: { noteId: v.id('notes'), content: v.string() },
+  handler: async (ctx, { noteId, content }) => {
+    const userId = await auth.getUserId(ctx)
+    if (!userId) throw new Error('Not authenticated')
+
+    const note = await ctx.db.get(noteId)
+    if (!note || note.createdBy !== userId || !note.isDraft) throw new Error('Draft not found')
+
+    await ctx.db.patch(noteId, { content, draftUpdatedAt: Date.now() })
+  },
+})
+
+export const finalizeDraft = mutation({
+  args: { noteId: v.id('notes'), content: v.string() },
+  handler: async (ctx, { noteId, content }) => {
+    const userId = await auth.getUserId(ctx)
+    if (!userId) throw new Error('Not authenticated')
+
+    const note = await ctx.db.get(noteId)
+    if (!note || note.createdBy !== userId || !note.isDraft) throw new Error('Draft not found')
+    if (!content.trim()) throw new Error('A note cannot be empty')
+
+    const board = await ctx.db.get(note.boardId)
+    if (!board || board.phase === 'finished') throw new Error('Board is finished')
+
+    await ctx.db.patch(noteId, { content: content.trim(), isDraft: false, draftUpdatedAt: undefined })
   },
 })
 

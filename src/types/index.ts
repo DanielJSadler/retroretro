@@ -17,10 +17,12 @@ export interface Note {
   content: string
   color: NoteColor
   createdBy: string
+  createdById: string
   position: { x: number; y: number }
   sectionId: string
   group?: string
   createdAt: number
+  isDraft: boolean
   votes: string[] // Array of participant names who voted for this note
 }
 

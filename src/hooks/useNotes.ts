@@ -5,6 +5,9 @@ import { Note, NoteColor, Section, Session } from '@/types'
 
 export function useNotes(boardId: string, session: Session | null, currentUser: any) {
   const createNote = useMutation(api.notes.create)
+  const createDraft = useMutation(api.notes.createDraft)
+  const updateDraft = useMutation(api.notes.updateDraft)
+  const finalizeDraft = useMutation(api.notes.finalizeDraft)
   const updateNote = useMutation(api.notes.update)
   const moveNote = useMutation(api.notes.move)
   const deleteNote = useMutation(api.notes.remove)
@@ -35,6 +38,31 @@ export function useNotes(boardId: string, session: Session | null, currentUser: 
     } catch (error) {
       console.error('Failed to add note:', error)
     }
+  }
+
+  const handleCreateDraft = async (color: NoteColor, sectionId: string, position: { x: number; y: number }) => {
+    if (!currentUser || !session) throw new Error('Not ready to create a note')
+
+    const draft = await createDraft({
+      boardId: boardId as Id<'boards'>,
+      sectionId: sectionId as Id<'sections'>,
+      color,
+      positionX: position.x,
+      positionY: position.y,
+    })
+
+    return {
+      id: draft.id as string,
+      position: draft.position,
+    }
+  }
+
+  const handleUpdateDraft = async (noteId: string, content: string) => {
+    await updateDraft({ noteId: noteId as Id<'notes'>, content })
+  }
+
+  const handleFinalizeDraft = async (noteId: string, content: string) => {
+    await finalizeDraft({ noteId: noteId as Id<'notes'>, content })
   }
 
   const handleUpdateNote = async (id: string, updates: Partial<Note>) => {
@@ -84,13 +112,13 @@ export function useNotes(boardId: string, session: Session | null, currentUser: 
   const canSeeNote = (note: Note): 'full' | 'ghost' | 'hidden' => {
     if (!session) return 'hidden'
     if (session.phase === 'writing') {
-      return note.createdBy === currentUser.name ? 'full' : 'ghost'
+      return note.createdById === currentUser?.id ? 'full' : 'ghost'
     }
     return 'full'
   }
 
   const canEditNote = (note: Note) => {
-    return note.createdBy === currentUser?.name
+    return note.createdById === currentUser?.id
   }
 
   const getRemainingVotes = () => {
@@ -184,6 +212,9 @@ export function useNotes(boardId: string, session: Session | null, currentUser: 
 
   return {
     handleAddNote,
+    handleCreateDraft,
+    handleUpdateDraft,
+    handleFinalizeDraft,
     handleUpdateNote,
     handleDeleteNote,
     handleVote,
