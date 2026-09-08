@@ -95,6 +95,8 @@ export const get = query({
         color: s.color,
         width: s.width ?? 1500,
         height: s.height ?? 2000,
+        x: s.x ?? s.order * 1520,
+        y: s.y ?? 0,
       })),
       creatorName: creator?.name ?? 'Unknown',
     }
@@ -296,6 +298,35 @@ export const reorderSections = mutation({
     for (const [order, sectionId] of sectionIds.entries()) {
       await ctx.db.patch(sectionId, { order })
     }
+  },
+})
+
+export const moveSection = mutation({
+  args: {
+    sectionId: v.id('sections'),
+    x: v.number(),
+    y: v.number(),
+  },
+  handler: async (ctx, { sectionId, x, y }) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error('Not authenticated')
+
+    const section = await ctx.db.get(sectionId)
+    if (!section) throw new Error('Section not found')
+    const board = await ctx.db.get(section.boardId)
+    if (!board || board.phase === 'finished') throw new Error('Board cannot be moved')
+
+    const participant = await ctx.db
+      .query('participants')
+      .withIndex('by_user_and_board', q => q.eq('userId', userId).eq('boardId', section.boardId))
+      .first()
+    if (!participant) throw new Error('Not a board participant')
+
+    const gridSize = 40
+    await ctx.db.patch(sectionId, {
+      x: Math.max(0, Math.min(10000, Math.round(x / gridSize) * gridSize)),
+      y: Math.max(0, Math.min(10000, Math.round(y / gridSize) * gridSize)),
+    })
   },
 })
 

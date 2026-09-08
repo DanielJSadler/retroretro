@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Header from '@/components/organisms/Header'
 import Sidebar from '@/components/organisms/Sidebar'
@@ -27,9 +27,8 @@ export default function BoardPage() {
   const [highlightedUser, setHighlightedUser] = useState<string | null>(null)
   const [followedUser, setFollowedUser] = useState<string | null>(null)
   const [movingSectionId, setMovingSectionId] = useState<string | null>(null)
-  const [sectionDropTarget, setSectionDropTarget] = useState<{ sectionId: string; placement: 'before' | 'after' } | null>(
-    null
-  )
+  const [sectionDragOffset, setSectionDragOffset] = useState({ x: 0, y: 0 })
+  const [sectionGhostPosition, setSectionGhostPosition] = useState<{ x: number; y: number } | null>(null)
   const [timerExpired, setTimerExpired] = useState(false)
 
   const [isConfettiMode, setIsConfettiMode] = useState(false)
@@ -46,7 +45,7 @@ export default function BoardPage() {
     handlePauseTimer,
     handleResetTimer,
     handleResizeSection,
-    handleReorderSections,
+    handleMoveSection,
     handleLeave,
   } = useBoardControls(boardId)
   const notesManager = useNotes(boardId, session, currentUser)
@@ -106,43 +105,43 @@ export default function BoardPage() {
     await notesManager.handleNoteDragEnd(noteId, clientX, clientY, sectionRefs)
   }
 
-  const handleSectionDragStart = (sectionId: string, event: React.DragEvent<HTMLButtonElement>) => {
+  const handleSectionDragStart = (
+    sectionId: string,
+    offset: { x: number; y: number },
+    event: React.DragEvent<HTMLButtonElement>
+  ) => {
     event.dataTransfer.effectAllowed = 'move'
     event.dataTransfer.setData('text/plain', sectionId)
     setMovingSectionId(sectionId)
-    setSectionDropTarget(null)
+    setSectionDragOffset(offset)
+    const section = session?.sections.find(candidate => candidate.id === sectionId)
+    setSectionGhostPosition(section ? { x: section.x, y: section.y } : null)
   }
 
-  const handleSectionDragOver = (sectionId: string, event: React.DragEvent<HTMLDivElement>) => {
-    if (!movingSectionId || movingSectionId === sectionId) return
-    event.preventDefault()
-    event.dataTransfer.dropEffect = 'move'
-    const rect = event.currentTarget.getBoundingClientRect()
-    const placement = event.clientX < rect.left + rect.width / 2 ? 'before' : 'after'
-    setSectionDropTarget(current =>
-      current?.sectionId === sectionId && current.placement === placement ? current : { sectionId, placement }
-    )
+  const getSnappedSectionPosition = (point: { x: number; y: number }) => ({
+    x: Math.max(0, Math.round((point.x - sectionDragOffset.x) / 40) * 40),
+    y: Math.max(0, Math.round((point.y - sectionDragOffset.y) / 40) * 40),
+  })
+
+  const handleCanvasSectionDragOver = (point: { x: number; y: number }) => {
+    if (!movingSectionId) return
+    setSectionGhostPosition(getSnappedSectionPosition(point))
   }
 
-  const handleSectionDrop = async (sectionId: string, event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    if (!movingSectionId || movingSectionId === sectionId || !session) {
+  const handleCanvasSectionDrop = async (point: { x: number; y: number }) => {
+    if (!movingSectionId) {
       setMovingSectionId(null)
-      setSectionDropTarget(null)
+      setSectionGhostPosition(null)
       return
     }
 
-    const rect = event.currentTarget.getBoundingClientRect()
-    const placement = event.clientX < rect.left + rect.width / 2 ? 'before' : 'after'
-    const sectionIds = session.sections.map(section => section.id)
-    const nextSectionIds = sectionIds.filter(id => id !== movingSectionId)
-    const targetIndex = nextSectionIds.indexOf(sectionId)
-    nextSectionIds.splice(targetIndex + (placement === 'after' ? 1 : 0), 0, movingSectionId)
+    const nextPosition = getSnappedSectionPosition(point)
+    const sectionId = movingSectionId
 
     setMovingSectionId(null)
-    setSectionDropTarget(null)
+    setSectionGhostPosition(null)
     try {
-      await handleReorderSections(nextSectionIds)
+      await handleMoveSection(sectionId, nextPosition.x, nextPosition.y)
     } catch (error) {
       console.error('Failed to move board area:', error)
     }
@@ -150,7 +149,7 @@ export default function BoardPage() {
 
   const handleSectionDragEnd = () => {
     setMovingSectionId(null)
-    setSectionDropTarget(null)
+    setSectionGhostPosition(null)
   }
 
   // Follow logic
@@ -194,6 +193,18 @@ export default function BoardPage() {
     return (
       <ErrorScreen title="Failed to load board" message="An error occurred building the session out of board data." />
     )
+
+  const movingSection = session.sections.find(section => section.id === movingSectionId)
+  const canvasSize = session.sections.reduce(
+    (size, section) => ({
+      width: Math.max(size.width, section.x + section.width + 240),
+      height: Math.max(size.height, section.y + section.height + 240),
+    }),
+    {
+      width: sectionGhostPosition && movingSection ? sectionGhostPosition.x + movingSection.width + 240 : 1800,
+      height: sectionGhostPosition && movingSection ? sectionGhostPosition.y + movingSection.height + 240 : 1200,
+    }
+  )
 
   const getTopVotedNotes = (): (Note & { rank: number })[] => {
     if (session.phase !== 'discussion' && session.phase !== 'finished') return []
@@ -253,18 +264,24 @@ export default function BoardPage() {
           setFollowedUser={setFollowedUser}
         />
 
-        <BoardCanvas zoom={zoom} onZoomChange={handleZoomChange} boardRef={boardRef} isFollowing={!!followedUser}>
+        <BoardCanvas
+          zoom={zoom}
+          onZoomChange={handleZoomChange}
+          boardRef={boardRef}
+          isFollowing={!!followedUser}
+          canvasSize={canvasSize}
+          onCanvasDragOver={handleCanvasSectionDragOver}
+          onCanvasDrop={handleCanvasSectionDrop}
+        >
           <CursorOverlay
             cursors={getCursorPositions}
             currentUserId={(currentUser as any)?._id || (currentUser as any)?.id}
           />
 
+          {movingSection && sectionGhostPosition && <SectionDropGhost section={movingSection} position={sectionGhostPosition} />}
+
           {(session.sections || []).map(section => (
-            <Fragment key={section.id}>
-              {sectionDropTarget?.sectionId === section.id && sectionDropTarget.placement === 'before' && (
-                <SectionDropGhost />
-              )}
-              <BoardSection
+            <BoardSection
               key={section.id}
               section={section}
               isActions={notesManager.isActionsSection(section)}
@@ -284,8 +301,6 @@ export default function BoardPage() {
               onCreateAction={notesManager.handleCreateAction}
               onResizeSection={handleResizeSection}
               onSectionDragStart={handleSectionDragStart}
-              onSectionDragOver={handleSectionDragOver}
-              onSectionDrop={handleSectionDrop}
               onSectionDragEnd={handleSectionDragEnd}
               isMoving={movingSectionId === section.id}
               onDragStart={handleNoteDragStart}
@@ -295,11 +310,7 @@ export default function BoardPage() {
               justDragged={justDragged}
               sectionRef={el => sectionRefs.current.set(section.id, el)}
               highlightedUser={highlightedUser}
-              />
-              {sectionDropTarget?.sectionId === section.id && sectionDropTarget.placement === 'after' && (
-                <SectionDropGhost />
-              )}
-            </Fragment>
+            />
           ))}
         </BoardCanvas>
 
@@ -346,10 +357,14 @@ export default function BoardPage() {
   )
 }
 
-function SectionDropGhost() {
+function SectionDropGhost({ section, position }: { section: { width: number; height: number }; position: { x: number; y: number } }) {
   return (
-    <div className="flex w-16 shrink-0 self-stretch items-center justify-center rounded-lg border-2 border-dashed border-blue-500 bg-blue-100/70 text-center text-xs font-semibold text-blue-700">
-      <span className="-rotate-90 whitespace-nowrap">Drop here</span>
+    <div
+      aria-hidden
+      className="absolute flex items-center justify-center rounded-lg border-2 border-dashed border-blue-500 bg-blue-100/70 text-center text-sm font-semibold text-blue-700 pointer-events-none"
+      style={{ width: `${section.width}px`, height: `${section.height}px`, left: `${position.x}px`, top: `${position.y}px` }}
+    >
+      <span>Snap to grid</span>
     </div>
   )
 }

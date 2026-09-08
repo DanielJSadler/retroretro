@@ -34,9 +34,11 @@ interface BoardSectionProps {
   onDragEnd: (noteId: string, clientX: number, clientY: number) => Promise<void>
   onCreateAction: (sourceNote: Note) => Promise<void>
   onResizeSection: (sectionId: string, width: number, height: number) => Promise<void>
-  onSectionDragStart?: (sectionId: string, event: React.DragEvent<HTMLButtonElement>) => void
-  onSectionDragOver?: (sectionId: string, event: React.DragEvent<HTMLDivElement>) => void
-  onSectionDrop?: (sectionId: string, event: React.DragEvent<HTMLDivElement>) => void
+  onSectionDragStart?: (
+    sectionId: string,
+    offset: { x: number; y: number },
+    event: React.DragEvent<HTMLButtonElement>
+  ) => void
   onSectionDragEnd?: () => void
   isMoving?: boolean
   zoom: number
@@ -65,8 +67,6 @@ export default function BoardSection({
   onCreateAction,
   onResizeSection,
   onSectionDragStart,
-  onSectionDragOver,
-  onSectionDrop,
   onSectionDragEnd,
   isMoving = false,
   zoom,
@@ -158,21 +158,33 @@ export default function BoardSection({
 
   return (
     <div
+      data-board-section
       className={`rounded-lg border-2 ${sectionColorClasses[section.color]} relative flex flex-col shrink-0 transition-opacity ${
         isMoving ? 'opacity-40' : ''
       }`}
       style={{
         width: `${sectionSize.width}px`,
         height: `${sectionSize.height}px`,
+        position: 'absolute',
+        left: `${section.x}px`,
+        top: `${section.y}px`,
       }}
-      onDragOver={event => onSectionDragOver?.(section.id, event)}
-      onDrop={event => onSectionDrop?.(section.id, event)}
     >
       <h3 className="flex items-center gap-1 border-b border-gray-300 px-2 py-2 text-sm font-semibold text-gray-800 flex-shrink-0">
         <button
           type="button"
           draggable
-          onDragStart={event => onSectionDragStart?.(section.id, event)}
+          onDragStart={event => {
+            const sectionElement = event.currentTarget.closest('[data-board-section]') as HTMLElement | null
+            const rect = sectionElement?.getBoundingClientRect()
+            onSectionDragStart?.(
+              section.id,
+              rect
+                ? { x: (event.clientX - rect.left) / zoom, y: (event.clientY - rect.top) / zoom }
+                : { x: 0, y: 0 },
+              event
+            )
+          }}
           onDragEnd={onSectionDragEnd}
           className="cursor-grab rounded px-1 text-gray-500 hover:bg-white/60 active:cursor-grabbing"
           title="Drag to move this board area"

@@ -11,6 +11,9 @@ interface BoardCanvasProps {
   onZoomChange?: (newZoom: number, anchor?: ZoomAnchor) => void
   boardRef?: React.RefObject<HTMLDivElement | null>
   isFollowing?: boolean
+  canvasSize?: { width: number; height: number }
+  onCanvasDragOver?: (point: { x: number; y: number }) => void
+  onCanvasDrop?: (point: { x: number; y: number }) => void
 }
 
 export default function BoardCanvas({
@@ -19,6 +22,9 @@ export default function BoardCanvas({
   onZoomChange,
   boardRef,
   isFollowing = false,
+  canvasSize,
+  onCanvasDragOver,
+  onCanvasDrop,
 }: BoardCanvasProps) {
   const internalBoardRef = useRef<HTMLDivElement>(null)
   const activeBoardRef = boardRef ?? internalBoardRef
@@ -26,6 +32,7 @@ export default function BoardCanvas({
   const [spacePressed, setSpacePressed] = useState(false)
   const [isPanning, setIsPanning] = useState(false)
   const panStart = useRef<{ x: number; y: number; scrollLeft: number; scrollTop: number } | null>(null)
+  const resolvedContentSize = canvasSize ?? contentSize
 
   useEffect(() => {
     const element = activeBoardRef.current
@@ -72,7 +79,7 @@ export default function BoardCanvas({
         e.preventDefault()
         if (onZoomChange) {
           const rect = mainEl.getBoundingClientRect()
-          const nextZoom = Math.max(0.25, Math.min(2, zoom * Math.exp(-e.deltaY * 0.002)))
+          const nextZoom = Math.max(0.1, Math.min(2, zoom * Math.exp(-e.deltaY * 0.002)))
           onZoomChange(nextZoom, { x: e.clientX - rect.left, y: e.clientY - rect.top })
         }
       }
@@ -111,6 +118,27 @@ export default function BoardCanvas({
     }
   }
 
+  const getBoardPoint = (event: React.DragEvent<HTMLElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    return {
+      x: (event.currentTarget.scrollLeft + event.clientX - rect.left) / zoom,
+      y: (event.currentTarget.scrollTop + event.clientY - rect.top) / zoom,
+    }
+  }
+
+  const handleDragOver = (event: React.DragEvent<HTMLElement>) => {
+    if (isFollowing || !onCanvasDragOver) return
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'move'
+    onCanvasDragOver(getBoardPoint(event))
+  }
+
+  const handleDrop = (event: React.DragEvent<HTMLElement>) => {
+    if (isFollowing || !onCanvasDrop) return
+    event.preventDefault()
+    onCanvasDrop(getBoardPoint(event))
+  }
+
   return (
     <main
       id="board-main"
@@ -121,15 +149,28 @@ export default function BoardCanvas({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
       <div
         className="relative"
-        style={{ width: `${contentSize.width * zoom}px`, height: `${contentSize.height * zoom}px` }}
+        style={{ width: `${resolvedContentSize.width * zoom}px`, height: `${resolvedContentSize.height * zoom}px` }}
       >
         <div
           ref={activeBoardRef}
-          className={`absolute left-0 top-0 flex gap-3 origin-top-left w-max ${isFollowing ? 'pointer-events-auto' : ''}`}
-          style={{ transform: `scale(${zoom})` }}
+          className={`absolute left-0 top-0 origin-top-left ${canvasSize ? '' : 'flex w-max gap-3'} ${
+            isFollowing ? 'pointer-events-auto' : ''
+          }`}
+          style={{
+            transform: `scale(${zoom})`,
+            width: canvasSize ? `${canvasSize.width}px` : undefined,
+            height: canvasSize ? `${canvasSize.height}px` : undefined,
+            backgroundColor: canvasSize ? '#f8fafc' : undefined,
+            backgroundImage: canvasSize
+              ? 'linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px)'
+              : undefined,
+            backgroundSize: canvasSize ? '40px 40px' : undefined,
+          }}
         >
           {children}
         </div>
