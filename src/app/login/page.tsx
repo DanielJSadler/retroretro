@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthActions } from "@convex-dev/auth/react";
 import Link from "next/link";
+import PasswordField from "@/components/molecules/PasswordField";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -62,19 +63,12 @@ export default function LoginPage() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-semibold mb-2 text-gray-700">
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full p-3"
-              placeholder="••••••••"
-            />
-          </div>
+          <PasswordField
+            label="Password"
+            value={password}
+            onChange={setPassword}
+            autoComplete="current-password"
+          />
 
           <button
             type="submit"
@@ -84,6 +78,11 @@ export default function LoginPage() {
             {isLoading ? "Signing in..." : "🕹️ Sign In"}
           </button>
         </form>
+        <p className="mt-3 text-right text-sm">
+          <Link href="/forgot-password" className="text-purple-600 hover:underline font-semibold">
+            Forgot password?
+          </Link>
+        </p>
 
         <p className="mt-6 text-center text-gray-600">
           Don&apos;t have an account?{" "}

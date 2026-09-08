@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthActions } from "@convex-dev/auth/react";
 import Link from "next/link";
+import PasswordField from "@/components/molecules/PasswordField";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -24,8 +25,8 @@ export default function SignupPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
       return;
     }
 
@@ -90,33 +91,19 @@ export default function SignupPage() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-semibold mb-2 text-gray-700">
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full p-3"
-              placeholder="••••••••"
-            />
-          </div>
+          <PasswordField
+            label="Password"
+            value={password}
+            onChange={setPassword}
+            autoComplete="new-password"
+          />
 
-          <div>
-            <label className="block text-sm font-semibold mb-2 text-gray-700">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              className="w-full p-3"
-              placeholder="••••••••"
-            />
-          </div>
+          <PasswordField
+            label="Confirm Password"
+            value={confirmPassword}
+            onChange={setConfirmPassword}
+            autoComplete="new-password"
+          />
 
           <button
             type="submit"

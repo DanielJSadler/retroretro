@@ -49,6 +49,18 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+### Password reset email
+
+Password resets are sent through Resend. Set these variables in the Convex deployment before using the reset flow:
+
+```bash
+npx convex env set AUTH_RESEND_KEY re_your_key
+npx convex env set AUTH_RESEND_FROM "Retro Retro <support@your-domain.com>"
+npx convex env set SITE_URL https://your-app.example.com
+```
+
+`AUTH_RESEND_FROM` must use a domain verified in Resend. `SITE_URL` is the public app URL used in the reset link.
+
 ### Usage
 
 1. Enter your name on the home page
