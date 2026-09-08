@@ -82,7 +82,7 @@ export function useBoardSync(boardId: string) {
             })
           ),
           participants: participants,
-          sections: board.sections.map((s: { id: Id<'sections'>; name: string; color: NoteColor }) => ({
+          sections: board.sections.map((s: { id: Id<'sections'>; name: string; color: NoteColor; width: number; height: number }) => ({
             ...s,
             id: s.id as string,
           })),

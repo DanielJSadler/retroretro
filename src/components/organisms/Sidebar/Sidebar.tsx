@@ -22,6 +22,7 @@ interface SidebarProps {
   onZoomIn: () => void
   onZoomOut: () => void
   onZoomReset: () => void
+  onZoomFit: () => void
   highlightedUser?: string | null
   setHighlightedUser?: (userId: string | null) => void
   followedUser?: string | null
@@ -43,6 +44,7 @@ export default function Sidebar({
   onZoomIn,
   onZoomOut,
   onZoomReset,
+  onZoomFit,
   highlightedUser,
   setHighlightedUser,
   followedUser,
@@ -112,7 +114,7 @@ export default function Sidebar({
             </ul>
           </div>
 
-          <ZoomControls zoom={zoom} onZoomIn={onZoomIn} onZoomOut={onZoomOut} onReset={onZoomReset} />
+          <ZoomControls zoom={zoom} onZoomIn={onZoomIn} onZoomOut={onZoomOut} onReset={onZoomReset} onFit={onZoomFit} />
 
           {/* Single iframe that switches between inline and fullscreen */}
           <div

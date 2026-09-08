@@ -6,6 +6,8 @@ export interface Section {
   id: string
   name: string
   color: NoteColor
+  width: number
+  height: number
 }
 
 export interface Note {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Note, NoteColor, Phase, Section } from '@/types'
 import StickyNote from '@/components/organisms/StickyNote'
 
@@ -33,6 +33,7 @@ interface BoardSectionProps {
   onDragMove: (x: number, y: number) => void
   onDragEnd: (noteId: string, clientX: number, clientY: number) => Promise<void>
   onCreateAction: (sourceNote: Note) => Promise<void>
+  onResizeSection: (sectionId: string, width: number, height: number) => Promise<void>
   zoom: number
   justDragged: boolean
   sectionRef: (el: HTMLDivElement | null) => void
@@ -57,6 +58,7 @@ export default function BoardSection({
   onDragMove,
   onDragEnd,
   onCreateAction,
+  onResizeSection,
   zoom,
   justDragged,
   sectionRef,
@@ -64,6 +66,50 @@ export default function BoardSection({
 }: BoardSectionProps) {
   const [creatingInSection, setCreatingInSection] = useState<string | null>(null)
   const [newNoteContent, setNewNoteContent] = useState('')
+  const [sectionSize, setSectionSize] = useState({ width: section.width, height: section.height })
+  const resizeStart = useRef<{ x: number; y: number; width: number; height: number } | null>(null)
+  const resizeLatest = useRef(sectionSize)
+
+  useEffect(() => {
+    if (!resizeStart.current) {
+      const nextSize = { width: section.width, height: section.height }
+      resizeLatest.current = nextSize
+      setSectionSize(nextSize)
+    }
+  }, [section.width, section.height])
+
+  const handleResizeStart = (e: React.PointerEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    resizeStart.current = {
+      x: e.clientX,
+      y: e.clientY,
+      width: sectionSize.width,
+      height: sectionSize.height,
+    }
+  }
+
+  const handleResizeMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const start = resizeStart.current
+    if (!start) return
+    e.preventDefault()
+    e.stopPropagation()
+    const nextSize = {
+      width: Math.max(600, Math.min(4000, start.width + (e.clientX - start.x) / zoom)),
+      height: Math.max(500, Math.min(4000, start.height + (e.clientY - start.y) / zoom)),
+    }
+    resizeLatest.current = nextSize
+    setSectionSize(nextSize)
+  }
+
+  const handleResizeEnd = async (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!resizeStart.current) return
+    e.preventDefault()
+    e.stopPropagation()
+    resizeStart.current = null
+    await onResizeSection(section.id, resizeLatest.current.width, resizeLatest.current.height)
+  }
 
   const handleSectionClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (justDragged) return
@@ -104,8 +150,8 @@ export default function BoardSection({
     <div
       className={`rounded-lg border-2 ${sectionColorClasses[section.color]} flex flex-col shrink-0`}
       style={{
-        width: '1500px',
-        height: '2000px',
+        width: `${sectionSize.width}px`,
+        height: `${sectionSize.height}px`,
       }}
     >
       <h3 className="font-semibold text-gray-800 text-center border-b border-gray-300 py-2 px-2 flex-shrink-0 text-sm">
@@ -252,6 +298,23 @@ export default function BoardSection({
               <p className="text-xs">Click to add a note</p>
             </div>
           </div>
+        )}
+
+        {sessionPhase !== 'finished' && (
+          <button
+            type="button"
+            data-resize-handle
+            className="absolute bottom-1 right-1 z-50 h-7 w-7 cursor-nwse-resize touch-none rounded border border-gray-500/30 bg-white/80 text-gray-600 shadow-sm hover:bg-white"
+            onPointerDown={handleResizeStart}
+            onPointerMove={handleResizeMove}
+            onPointerUp={handleResizeEnd}
+            onPointerCancel={handleResizeEnd}
+            onClick={e => e.stopPropagation()}
+            aria-label={`Resize ${section.name}`}
+            title="Drag to resize section"
+          >
+            ↘
+          </button>
         )}
       </div>
     </div>

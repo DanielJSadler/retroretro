@@ -8,6 +8,7 @@ interface ZoomControlsProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onReset: () => void;
+  onFit: () => void;
   minZoom?: number;
   maxZoom?: number;
 }
@@ -17,6 +18,7 @@ export default function ZoomControls({
   onZoomIn,
   onZoomOut,
   onReset,
+  onFit,
 }: ZoomControlsProps) {
   return (
     <div className="bg-gray-50 rounded-lg p-3">
@@ -40,9 +42,12 @@ export default function ZoomControls({
           +
         </button>
         <Button onClick={onReset} variant="secondary" size="sm">
-          Reset
+          100%
         </Button>
       </div>
+      <Button onClick={onFit} variant="secondary" size="sm" className="mt-2 w-full">
+        Fit board
+      </Button>
     </div>
   );
 }

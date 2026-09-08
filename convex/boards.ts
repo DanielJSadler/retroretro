@@ -93,6 +93,8 @@ export const get = query({
         id: s._id,
         name: s.name,
         color: s.color,
+        width: s.width ?? 1500,
+        height: s.height ?? 2000,
       })),
       creatorName: creator?.name ?? 'Unknown',
     }
@@ -218,6 +220,49 @@ export const updatePhase = mutation({
         await ctx.db.delete(vote._id)
       }
     }
+  },
+})
+
+export const resizeSection = mutation({
+  args: {
+    sectionId: v.id('sections'),
+    width: v.number(),
+    height: v.number(),
+  },
+  handler: async (ctx, { sectionId, width, height }) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error('Not authenticated')
+
+    const section = await ctx.db.get(sectionId)
+    if (!section) throw new Error('Section not found')
+    const board = await ctx.db.get(section.boardId)
+    if (!board || board.phase === 'finished') throw new Error('Board cannot be resized')
+
+    const participant = await ctx.db
+      .query('participants')
+      .withIndex('by_user_and_board', q => q.eq('userId', userId).eq('boardId', section.boardId))
+      .first()
+    if (!participant) throw new Error('Not a board participant')
+
+    const nextWidth = Math.max(600, Math.min(4000, Math.round(width)))
+    const nextHeight = Math.max(500, Math.min(4000, Math.round(height)))
+    const previousWidth = section.width ?? 1500
+    const previousHeight = section.height ?? 2000
+
+    // Notes use percentage coordinates. Counter-scale them so their visual
+    // positions remain fixed while the section edge moves.
+    const notes = await ctx.db
+      .query('notes')
+      .withIndex('by_section', q => q.eq('sectionId', sectionId))
+      .collect()
+    for (const note of notes) {
+      await ctx.db.patch(note._id, {
+        positionX: Math.max(0, Math.min(95, note.positionX * (previousWidth / nextWidth))),
+        positionY: Math.max(0, Math.min(95, note.positionY * (previousHeight / nextHeight))),
+      })
+    }
+
+    await ctx.db.patch(sectionId, { width: nextWidth, height: nextHeight })
   },
 })
 

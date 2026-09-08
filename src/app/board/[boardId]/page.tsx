@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Header from '@/components/organisms/Header'
 import Sidebar from '@/components/organisms/Sidebar'
@@ -36,9 +36,41 @@ export default function BoardPage() {
 
   const { board, session, currentUser, currentUserName, isAuthenticated, authLoading, setVotingDone } = useBoardSync(boardId)
   const { getCursorPositions } = useCursorTracking(boardId, boardRef, zoom)
-  const { handlePhaseChange, handleStartTimer, handlePauseTimer, handleResetTimer, handleLeave } =
+  const { handlePhaseChange, handleStartTimer, handlePauseTimer, handleResetTimer, handleResizeSection, handleLeave } =
     useBoardControls(boardId)
   const notesManager = useNotes(boardId, session, currentUser)
+
+  const handleZoomChange = useCallback(
+    (requestedZoom: number, anchor?: { x: number; y: number }) => {
+      const nextZoom = Math.max(0.1, Math.min(2, requestedZoom))
+      const mainEl = document.getElementById('board-main')
+      if (!mainEl || nextZoom === zoom) return
+
+      const point = anchor ?? { x: mainEl.clientWidth / 2, y: mainEl.clientHeight / 2 }
+      const boardX = (mainEl.scrollLeft + point.x) / zoom
+      const boardY = (mainEl.scrollTop + point.y) / zoom
+      setZoom(nextZoom)
+
+      requestAnimationFrame(() => {
+        mainEl.scrollLeft = boardX * nextZoom - point.x
+        mainEl.scrollTop = boardY * nextZoom - point.y
+      })
+    },
+    [zoom]
+  )
+
+  const handleFitBoard = useCallback(() => {
+    const mainEl = document.getElementById('board-main')
+    const boardEl = boardRef.current
+    if (!mainEl || !boardEl) return
+    const fitZoom = Math.min(
+      1,
+      (mainEl.clientWidth - 24) / boardEl.scrollWidth,
+      (mainEl.clientHeight - 24) / boardEl.scrollHeight
+    )
+    setZoom(Math.max(0.1, fitZoom))
+    requestAnimationFrame(() => mainEl.scrollTo({ left: 0, top: 0 }))
+  }, [])
 
   useEffect(() => {
     if (session?.phase === 'reveal') {
@@ -153,16 +185,17 @@ export default function BoardPage() {
           }}
           onTimerFinish={() => setTimerExpired(true)}
           onVotingDone={setVotingDone}
-          onZoomIn={() => setZoom(z => Math.min(2, z + 0.1))}
-          onZoomOut={() => setZoom(z => Math.max(0.25, z - 0.1))}
-          onZoomReset={() => setZoom(1)}
+          onZoomIn={() => handleZoomChange(zoom + 0.1)}
+          onZoomOut={() => handleZoomChange(zoom - 0.1)}
+          onZoomReset={() => handleZoomChange(1)}
+          onZoomFit={handleFitBoard}
           highlightedUser={highlightedUser}
           setHighlightedUser={setHighlightedUser}
           followedUser={followedUser}
           setFollowedUser={setFollowedUser}
         />
 
-        <BoardCanvas zoom={zoom} onZoomChange={setZoom} boardRef={boardRef} isFollowing={!!followedUser}>
+        <BoardCanvas zoom={zoom} onZoomChange={handleZoomChange} boardRef={boardRef} isFollowing={!!followedUser}>
           <CursorOverlay
             cursors={getCursorPositions}
             currentUserId={(currentUser as any)?._id || (currentUser as any)?.id}
@@ -187,6 +220,7 @@ export default function BoardPage() {
               onDeleteNote={notesManager.handleDeleteNote}
               onVote={notesManager.handleVote}
               onCreateAction={notesManager.handleCreateAction}
+              onResizeSection={handleResizeSection}
               onDragStart={handleNoteDragStart}
               onDragMove={handleNoteDragMove}
               onDragEnd={handleDragEndAndDrop}
