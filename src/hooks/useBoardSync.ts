@@ -73,6 +73,7 @@ export function useBoardSync(boardId: string) {
               createdById: Id<'users'>
               position: { x: number; y: number }
               sectionId: Id<'sections'>
+              sourceNoteId?: Id<'notes'>
               createdAt: number
               isDraft: boolean
               votes: Id<'users'>[]
@@ -80,6 +81,7 @@ export function useBoardSync(boardId: string) {
               ...n,
               id: n.id as string,
               sectionId: n.sectionId as string,
+              sourceNoteId: n.sourceNoteId as string | undefined,
               votes: n.votes.map(v => v as string),
             })
           ),

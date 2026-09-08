@@ -69,6 +69,7 @@ export const getByBoard = query({
           createdById: note.createdBy,
           position: { x: note.positionX, y: note.positionY },
           sectionId: note.sectionId,
+          sourceNoteId: note.sourceNoteId,
           createdAt: note._creationTime,
           isDraft: note.isDraft ?? false,
           votes:
@@ -90,14 +91,23 @@ export const create = mutation({
     color: v.union(v.literal('yellow'), v.literal('blue'), v.literal('green'), v.literal('red'), v.literal('pink')),
     positionX: v.number(),
     positionY: v.number(),
+    sourceNoteId: v.optional(v.id('notes')),
   },
-  handler: async (ctx, { boardId, sectionId, content, color, positionX, positionY }) => {
+  handler: async (ctx, { boardId, sectionId, content, color, positionX, positionY, sourceNoteId }) => {
     const userId = await auth.getUserId(ctx)
     if (!userId) throw new Error('Not authenticated')
 
     const board = await ctx.db.get(boardId)
     if (!board) throw new Error('Board not found')
     if (board.phase === 'finished') throw new Error('Board is finished')
+
+    const section = await ctx.db.get(sectionId)
+    if (!section || section.boardId !== boardId) throw new Error('Section not found')
+
+    if (sourceNoteId) {
+      const sourceNote = await ctx.db.get(sourceNoteId)
+      if (!sourceNote || sourceNote.boardId !== boardId) throw new Error('Source note not found')
+    }
 
     return await ctx.db.insert('notes', {
       boardId,
@@ -107,6 +117,7 @@ export const create = mutation({
       createdBy: userId,
       positionX,
       positionY,
+      sourceNoteId,
       isDraft: false,
     })
   },

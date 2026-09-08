@@ -58,6 +58,8 @@ export default defineSchema({
     createdBy: v.id('users'),
     positionX: v.number(),
     positionY: v.number(),
+    // Action notes retain a durable link to the item they were created from.
+    sourceNoteId: v.optional(v.id('notes')),
     isDraft: v.optional(v.boolean()),
     draftUpdatedAt: v.optional(v.number()),
   })

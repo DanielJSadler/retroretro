@@ -17,7 +17,8 @@ export function useNotes(boardId: string, session: Session | null, currentUser: 
     content: string,
     color: NoteColor,
     sectionId: string,
-    position?: { x: number; y: number }
+    position?: { x: number; y: number },
+    sourceNoteId?: string
   ) => {
     if (!currentUser || !session) return
 
@@ -34,6 +35,7 @@ export function useNotes(boardId: string, session: Session | null, currentUser: 
         color,
         positionX: finalPosition.x,
         positionY: finalPosition.y,
+        sourceNoteId: sourceNoteId as Id<'notes'> | undefined,
       })
     } catch (error) {
       console.error('Failed to add note:', error)
@@ -146,7 +148,7 @@ export function useNotes(boardId: string, session: Session | null, currentUser: 
       return
     }
 
-    await handleAddNote(`ACTION: ${sourceNote.content}`, actionsSection.color, actionsSection.id)
+    await handleAddNote(`ACTION: ${sourceNote.content}`, actionsSection.color, actionsSection.id, undefined, sourceNote.id)
   }
 
   const handleNoteDragEnd = async (

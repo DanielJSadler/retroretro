@@ -20,6 +20,7 @@ export interface Note {
   createdById: string
   position: { x: number; y: number }
   sectionId: string
+  sourceNoteId?: string
   group?: string
   createdAt: number
   isDraft: boolean

@@ -13,6 +13,7 @@ const sectionColorClasses: Record<NoteColor, string> = {
 interface BoardSectionProps {
   section: Section
   isActions: boolean
+  allNotes: Note[]
   visibleNotes: Note[]
   topVotedRefs: (Note & { rank: number })[]
   sessionPhase: Phase
@@ -45,12 +46,16 @@ interface BoardSectionProps {
   zoom: number
   justDragged: boolean
   sectionRef: (el: HTMLDivElement | null) => void
+  onNoteElementChange: (noteId: string, element: HTMLDivElement | null) => void
+  onOpenSource: (sourceNoteId: string) => void
+  focusedNoteId?: string | null
   highlightedUser?: string | null
 }
 
 export default function BoardSection({
   section,
   isActions,
+  allNotes,
   visibleNotes,
   topVotedRefs,
   sessionPhase,
@@ -75,6 +80,9 @@ export default function BoardSection({
   zoom,
   justDragged,
   sectionRef,
+  onNoteElementChange,
+  onOpenSource,
+  focusedNoteId,
   highlightedUser,
 }: BoardSectionProps) {
   const [creatingInSection, setCreatingInSection] = useState<string | null>(null)
@@ -382,6 +390,10 @@ export default function BoardSection({
                   onDragMove={onDragMove}
                   onCreateAction={onCreateAction}
                   showCreateAction={!isActions && sessionPhase === 'discussion'}
+                  sourceNote={note.sourceNoteId ? allNotes.find(candidate => candidate.id === note.sourceNoteId) : undefined}
+                  onOpenSource={onOpenSource}
+                  onElementChange={onNoteElementChange}
+                  isFocused={focusedNoteId === note.id}
                   zoom={zoom}
                 />
               )}

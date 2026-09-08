@@ -17,8 +17,12 @@ interface StickyNoteProps {
   onDragEnd?: (noteId: string, noteX: number, noteY: number) => void;
   onDragStart?: (note: Note, x: number, y: number) => void;
   onDragMove?: (x: number, y: number) => void;
+  onElementChange?: (noteId: string, element: HTMLDivElement | null) => void;
+  onOpenSource?: (sourceNoteId: string) => void;
   showCreateAction?: boolean;
   isReference?: boolean;
+  isFocused?: boolean;
+  sourceNote?: Note;
   zoom?: number;
 }
 
@@ -44,8 +48,12 @@ export default function StickyNote({
   onDragEnd,
   onDragStart,
   onDragMove,
+  onElementChange,
+  onOpenSource,
   showCreateAction = false,
   isReference = false,
+  isFocused = false,
+  sourceNote,
   zoom = 1,
 }: StickyNoteProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -170,14 +178,21 @@ export default function StickyNote({
         top: `${note.position.y}%`,
       };
 
+  const sourceSummary = sourceNote?.content.trim()
+    ? sourceNote.content.trim().replace(/\s+/g, ' ').slice(0, 52)
+    : 'Source deleted';
+
   return (
     <div
-      ref={noteRef}
+      ref={(element) => {
+        noteRef.current = element;
+        onElementChange?.(note.id, element);
+      }}
       className={`absolute min-w-[200px] max-w-[300px] p-4 rounded-lg shadow-lg select-none z-20 flex flex-col gap-2 transition-colors ${
         colorClasses[note.color]
       } ${isDragging ? 'opacity-30 cursor-none' : ''} ${
         !isDragging && !isReference ? 'cursor-grab active:cursor-grabbing' : ''
-      } ${isReference ? 'opacity-90 ring-2 ring-purple-400' : ''}`}
+      } ${isReference ? 'opacity-90 ring-2 ring-purple-400' : ''} ${isFocused ? 'ring-4 ring-blue-500 ring-offset-2' : ''}`}
       style={positionStyle}
       onMouseDown={handleMouseDown}
     >
@@ -226,6 +241,21 @@ export default function StickyNote({
             </div>
          )}
       </div>
+
+      {note.sourceNoteId && !isReference && (
+        <button
+          type="button"
+          className="w-full rounded bg-purple-100 px-2 py-1 text-left text-xs font-semibold text-purple-800 hover:bg-purple-200"
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpenSource?.(note.sourceNoteId!);
+          }}
+          onMouseDown={(event) => event.stopPropagation()}
+          title={sourceNote ? 'Show source item' : 'The source item was deleted'}
+        >
+          ↖ Source: {sourceSummary}{sourceNote && sourceNote.content.trim().length > 52 ? '…' : ''}
+        </button>
+      )}
 
       {/* Content Area */}
       {isEditing ? (

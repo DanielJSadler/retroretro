@@ -9,6 +9,7 @@ import ConfettiMenu from '@/components/molecules/ConfettiMenu'
 import BoardCanvas from '@/components/organisms/BoardCanvas'
 import BoardSection from '@/components/organisms/BoardSection'
 import CursorOverlay from '@/components/organisms/CursorOverlay'
+import ActionConnectorLayer from '@/components/organisms/ActionConnectorLayer'
 import { Note } from '@/types'
 
 import { useBoardSync } from '@/hooks/useBoardSync'
@@ -30,12 +31,15 @@ export default function BoardPage() {
   const [sectionDragOffset, setSectionDragOffset] = useState({ x: 0, y: 0 })
   const [sectionGhostPosition, setSectionGhostPosition] = useState<{ x: number; y: number } | null>(null)
   const [timerExpired, setTimerExpired] = useState(false)
+  const [focusedNoteId, setFocusedNoteId] = useState<string | null>(null)
 
   const [isConfettiMode, setIsConfettiMode] = useState(false)
   const [confettiType, setConfettiType] = useState<'basic' | 'stars' | 'fireworks' | 'random'>('basic')
 
   const boardRef = useRef<HTMLDivElement>(null)
   const sectionRefs = useRef<Map<string, HTMLDivElement | null>>(new Map())
+  const noteRefs = useRef<Map<string, HTMLDivElement | null>>(new Map())
+  const focusTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { board, session, currentUser, currentUserName, isAuthenticated, authLoading, setVotingDone } = useBoardSync(boardId)
   const { getCursorPositions } = useCursorTracking(boardId, boardRef, zoom)
@@ -49,6 +53,38 @@ export default function BoardPage() {
     handleLeave,
   } = useBoardControls(boardId)
   const notesManager = useNotes(boardId, session, currentUser)
+
+  const handleNoteElementChange = useCallback((noteId: string, element: HTMLDivElement | null) => {
+    if (element) {
+      noteRefs.current.set(noteId, element)
+    } else {
+      noteRefs.current.delete(noteId)
+    }
+  }, [])
+
+  const handleOpenSource = useCallback((sourceNoteId: string) => {
+    const sourceElement = noteRefs.current.get(sourceNoteId)
+    const mainElement = document.getElementById('board-main')
+    if (sourceElement && mainElement) {
+      const sourceRect = sourceElement.getBoundingClientRect()
+      const mainRect = mainElement.getBoundingClientRect()
+      mainElement.scrollBy({
+        left: sourceRect.left - mainRect.left - (mainElement.clientWidth - sourceRect.width) / 2,
+        top: sourceRect.top - mainRect.top - (mainElement.clientHeight - sourceRect.height) / 2,
+        behavior: 'smooth',
+      })
+    }
+
+    setFocusedNoteId(sourceNoteId)
+    if (focusTimeout.current) clearTimeout(focusTimeout.current)
+    focusTimeout.current = setTimeout(() => setFocusedNoteId(null), 1600)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (focusTimeout.current) clearTimeout(focusTimeout.current)
+    }
+  }, [])
 
   const handleZoomChange = useCallback(
     (requestedZoom: number, anchor?: { x: number; y: number }) => {
@@ -217,6 +253,10 @@ export default function BoardPage() {
       .map((note, index) => ({ ...note, rank: index + 1 }))
   }
 
+  const actionLinks = session.notes.flatMap(note =>
+    note.sourceNoteId ? [{ actionNoteId: note.id, sourceNoteId: note.sourceNoteId }] : []
+  )
+
   return (
     <div className="h-screen flex flex-col bg-gray-100 text-black overflow-hidden">
       <Header
@@ -273,6 +313,14 @@ export default function BoardPage() {
           onCanvasDragOver={handleCanvasSectionDragOver}
           onCanvasDrop={handleCanvasSectionDrop}
         >
+          <ActionConnectorLayer
+            boardRef={boardRef}
+            canvasSize={canvasSize}
+            links={actionLinks}
+            noteRefs={noteRefs}
+            zoom={zoom}
+          />
+
           <CursorOverlay
             cursors={getCursorPositions}
             currentUserId={(currentUser as any)?._id || (currentUser as any)?.id}
@@ -285,6 +333,7 @@ export default function BoardPage() {
               key={section.id}
               section={section}
               isActions={notesManager.isActionsSection(section)}
+              allNotes={session.notes}
               visibleNotes={session.notes.filter(
                 note => note.sectionId === section.id && notesManager.canSeeNote(note) !== 'hidden'
               )}
@@ -311,6 +360,9 @@ export default function BoardPage() {
               zoom={zoom}
               justDragged={justDragged}
               sectionRef={el => sectionRefs.current.set(section.id, el)}
+              onNoteElementChange={handleNoteElementChange}
+              onOpenSource={handleOpenSource}
+              focusedNoteId={focusedNoteId}
               highlightedUser={highlightedUser}
             />
           ))}
