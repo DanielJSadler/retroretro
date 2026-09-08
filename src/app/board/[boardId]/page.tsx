@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { Fragment, useState, useRef, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Header from '@/components/organisms/Header'
 import Sidebar from '@/components/organisms/Sidebar'
@@ -26,6 +26,10 @@ export default function BoardPage() {
   const [draggingNote, setDraggingNote] = useState<{ note: Note; x: number; y: number } | null>(null)
   const [highlightedUser, setHighlightedUser] = useState<string | null>(null)
   const [followedUser, setFollowedUser] = useState<string | null>(null)
+  const [movingSectionId, setMovingSectionId] = useState<string | null>(null)
+  const [sectionDropTarget, setSectionDropTarget] = useState<{ sectionId: string; placement: 'before' | 'after' } | null>(
+    null
+  )
   const [timerExpired, setTimerExpired] = useState(false)
 
   const [isConfettiMode, setIsConfettiMode] = useState(false)
@@ -36,8 +40,15 @@ export default function BoardPage() {
 
   const { board, session, currentUser, currentUserName, isAuthenticated, authLoading, setVotingDone } = useBoardSync(boardId)
   const { getCursorPositions } = useCursorTracking(boardId, boardRef, zoom)
-  const { handlePhaseChange, handleStartTimer, handlePauseTimer, handleResetTimer, handleResizeSection, handleLeave } =
-    useBoardControls(boardId)
+  const {
+    handlePhaseChange,
+    handleStartTimer,
+    handlePauseTimer,
+    handleResetTimer,
+    handleResizeSection,
+    handleReorderSections,
+    handleLeave,
+  } = useBoardControls(boardId)
   const notesManager = useNotes(boardId, session, currentUser)
 
   const handleZoomChange = useCallback(
@@ -93,6 +104,53 @@ export default function BoardPage() {
     setDraggingNote(null)
     setTimeout(() => setJustDragged(false), 100)
     await notesManager.handleNoteDragEnd(noteId, clientX, clientY, sectionRefs)
+  }
+
+  const handleSectionDragStart = (sectionId: string, event: React.DragEvent<HTMLButtonElement>) => {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', sectionId)
+    setMovingSectionId(sectionId)
+    setSectionDropTarget(null)
+  }
+
+  const handleSectionDragOver = (sectionId: string, event: React.DragEvent<HTMLDivElement>) => {
+    if (!movingSectionId || movingSectionId === sectionId) return
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'move'
+    const rect = event.currentTarget.getBoundingClientRect()
+    const placement = event.clientX < rect.left + rect.width / 2 ? 'before' : 'after'
+    setSectionDropTarget(current =>
+      current?.sectionId === sectionId && current.placement === placement ? current : { sectionId, placement }
+    )
+  }
+
+  const handleSectionDrop = async (sectionId: string, event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    if (!movingSectionId || movingSectionId === sectionId || !session) {
+      setMovingSectionId(null)
+      setSectionDropTarget(null)
+      return
+    }
+
+    const rect = event.currentTarget.getBoundingClientRect()
+    const placement = event.clientX < rect.left + rect.width / 2 ? 'before' : 'after'
+    const sectionIds = session.sections.map(section => section.id)
+    const nextSectionIds = sectionIds.filter(id => id !== movingSectionId)
+    const targetIndex = nextSectionIds.indexOf(sectionId)
+    nextSectionIds.splice(targetIndex + (placement === 'after' ? 1 : 0), 0, movingSectionId)
+
+    setMovingSectionId(null)
+    setSectionDropTarget(null)
+    try {
+      await handleReorderSections(nextSectionIds)
+    } catch (error) {
+      console.error('Failed to move board area:', error)
+    }
+  }
+
+  const handleSectionDragEnd = () => {
+    setMovingSectionId(null)
+    setSectionDropTarget(null)
   }
 
   // Follow logic
@@ -202,7 +260,11 @@ export default function BoardPage() {
           />
 
           {(session.sections || []).map(section => (
-            <BoardSection
+            <Fragment key={section.id}>
+              {sectionDropTarget?.sectionId === section.id && sectionDropTarget.placement === 'before' && (
+                <SectionDropGhost />
+              )}
+              <BoardSection
               key={section.id}
               section={section}
               isActions={notesManager.isActionsSection(section)}
@@ -221,6 +283,11 @@ export default function BoardPage() {
               onVote={notesManager.handleVote}
               onCreateAction={notesManager.handleCreateAction}
               onResizeSection={handleResizeSection}
+              onSectionDragStart={handleSectionDragStart}
+              onSectionDragOver={handleSectionDragOver}
+              onSectionDrop={handleSectionDrop}
+              onSectionDragEnd={handleSectionDragEnd}
+              isMoving={movingSectionId === section.id}
               onDragStart={handleNoteDragStart}
               onDragMove={handleNoteDragMove}
               onDragEnd={handleDragEndAndDrop}
@@ -228,7 +295,11 @@ export default function BoardPage() {
               justDragged={justDragged}
               sectionRef={el => sectionRefs.current.set(section.id, el)}
               highlightedUser={highlightedUser}
-            />
+              />
+              {sectionDropTarget?.sectionId === section.id && sectionDropTarget.placement === 'after' && (
+                <SectionDropGhost />
+              )}
+            </Fragment>
           ))}
         </BoardCanvas>
 
@@ -271,6 +342,14 @@ export default function BoardPage() {
           onTypeChange={setConfettiType}
         />
       </div>
+    </div>
+  )
+}
+
+function SectionDropGhost() {
+  return (
+    <div className="flex w-16 shrink-0 self-stretch items-center justify-center rounded-lg border-2 border-dashed border-blue-500 bg-blue-100/70 text-center text-xs font-semibold text-blue-700">
+      <span className="-rotate-90 whitespace-nowrap">Drop here</span>
     </div>
   )
 }

@@ -266,6 +266,39 @@ export const resizeSection = mutation({
   },
 })
 
+export const reorderSections = mutation({
+  args: {
+    boardId: v.id('boards'),
+    sectionIds: v.array(v.id('sections')),
+  },
+  handler: async (ctx, { boardId, sectionIds }) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error('Not authenticated')
+
+    const board = await ctx.db.get(boardId)
+    if (!board || board.phase === 'finished') throw new Error('Board cannot be reordered')
+
+    const participant = await ctx.db
+      .query('participants')
+      .withIndex('by_user_and_board', q => q.eq('userId', userId).eq('boardId', boardId))
+      .first()
+    if (!participant) throw new Error('Not a board participant')
+
+    const sections = await ctx.db
+      .query('sections')
+      .withIndex('by_board', q => q.eq('boardId', boardId))
+      .collect()
+    const expectedIds = new Set(sections.map(section => section._id))
+    if (sectionIds.length !== sections.length || sectionIds.some(id => !expectedIds.has(id))) {
+      throw new Error('Section order does not match this board')
+    }
+
+    for (const [order, sectionId] of sectionIds.entries()) {
+      await ctx.db.patch(sectionId, { order })
+    }
+  },
+})
+
 // Delete a board
 export const remove = mutation({
   args: { boardId: v.id('boards') },

@@ -34,6 +34,11 @@ interface BoardSectionProps {
   onDragEnd: (noteId: string, clientX: number, clientY: number) => Promise<void>
   onCreateAction: (sourceNote: Note) => Promise<void>
   onResizeSection: (sectionId: string, width: number, height: number) => Promise<void>
+  onSectionDragStart?: (sectionId: string, event: React.DragEvent<HTMLButtonElement>) => void
+  onSectionDragOver?: (sectionId: string, event: React.DragEvent<HTMLDivElement>) => void
+  onSectionDrop?: (sectionId: string, event: React.DragEvent<HTMLDivElement>) => void
+  onSectionDragEnd?: () => void
+  isMoving?: boolean
   zoom: number
   justDragged: boolean
   sectionRef: (el: HTMLDivElement | null) => void
@@ -59,6 +64,11 @@ export default function BoardSection({
   onDragEnd,
   onCreateAction,
   onResizeSection,
+  onSectionDragStart,
+  onSectionDragOver,
+  onSectionDrop,
+  onSectionDragEnd,
+  isMoving = false,
   zoom,
   justDragged,
   sectionRef,
@@ -148,15 +158,33 @@ export default function BoardSection({
 
   return (
     <div
-      className={`rounded-lg border-2 ${sectionColorClasses[section.color]} flex flex-col shrink-0`}
+      className={`rounded-lg border-2 ${sectionColorClasses[section.color]} relative flex flex-col shrink-0 transition-opacity ${
+        isMoving ? 'opacity-40' : ''
+      }`}
       style={{
         width: `${sectionSize.width}px`,
         height: `${sectionSize.height}px`,
       }}
+      onDragOver={event => onSectionDragOver?.(section.id, event)}
+      onDrop={event => onSectionDrop?.(section.id, event)}
     >
-      <h3 className="font-semibold text-gray-800 text-center border-b border-gray-300 py-2 px-2 flex-shrink-0 text-sm">
-        {section.name}
-        <span className="ml-1 text-xs font-normal text-gray-500">({visibleNotes.length})</span>
+      <h3 className="flex items-center gap-1 border-b border-gray-300 px-2 py-2 text-sm font-semibold text-gray-800 flex-shrink-0">
+        <button
+          type="button"
+          draggable
+          onDragStart={event => onSectionDragStart?.(section.id, event)}
+          onDragEnd={onSectionDragEnd}
+          className="cursor-grab rounded px-1 text-gray-500 hover:bg-white/60 active:cursor-grabbing"
+          title="Drag to move this board area"
+          aria-label={`Move ${section.name}`}
+        >
+          ⠿
+        </button>
+        <span className="flex-1 text-center">
+          {section.name}
+          <span className="ml-1 text-xs font-normal text-gray-500">({visibleNotes.length})</span>
+        </span>
+        <span className="w-5" aria-hidden />
       </h3>
 
       <div

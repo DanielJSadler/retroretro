@@ -11,6 +11,7 @@ export function useBoardControls(boardId: string) {
   const pauseTimer = useMutation(api.timer.pause)
   const resetTimer = useMutation(api.timer.reset)
   const resizeSection = useMutation(api.boards.resizeSection)
+  const reorderSections = useMutation(api.boards.reorderSections)
 
   const handlePhaseChange = async (phase: Phase, options?: { votesPerPerson?: number; resetVotes?: boolean }) => {
     try {
@@ -59,12 +60,20 @@ export function useBoardControls(boardId: string) {
     await resizeSection({ sectionId: sectionId as Id<'sections'>, width, height })
   }
 
+  const handleReorderSections = async (sectionIds: string[]) => {
+    await reorderSections({
+      boardId: boardId as Id<'boards'>,
+      sectionIds: sectionIds as Id<'sections'>[],
+    })
+  }
+
   return {
     handlePhaseChange,
     handleStartTimer,
     handlePauseTimer,
     handleResetTimer,
     handleResizeSection,
+    handleReorderSections,
     handleLeave,
   }
 }
