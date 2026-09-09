@@ -308,7 +308,7 @@ export default function BoardSection({
 
       <div
         ref={sectionRef}
-        className="section-canvas flex-1 relative overflow-hidden cursor-crosshair"
+        className="section-canvas flex-1 relative overflow-visible cursor-crosshair"
         onClick={handleSectionClick}
       >
         {isActions && topVotedRefs.length > 0 && (
@@ -361,7 +361,7 @@ export default function BoardSection({
             >
               {isGhost ? (
                 <div
-                  className="w-40 p-3 rounded-lg shadow-md bg-gray-200 border-2 border-dashed border-gray-400 opacity-50"
+                  className="z-20 w-40 p-3 rounded-lg shadow-md bg-gray-200 border-2 border-dashed border-gray-400 opacity-50"
                   style={{
                     position: 'absolute',
                     left: `${note.position.x}%`,
