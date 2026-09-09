@@ -9,16 +9,22 @@ import HomeTemplate from '@/components/templates/HomeTemplate';
 import { SectionInput } from '@/components/organisms/CreateBoardForm';
 import AuthGuard from '@/components/organisms/AuthGuard/AuthGuard';
 import { Id } from '../../convex/_generated/dataModel';
+import { consumePostAuthRedirect } from '@/utils/postAuthRedirect';
 
 export default function Home() {
   const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
   const router = useRouter();
   
-  // Redirect to login if not authenticated
+  // Redirect to login when signed out, or resume the requested room after authentication.
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
+    if (authLoading) return;
+    if (!isAuthenticated) {
+      router.replace('/login');
+      return;
     }
+
+    const returnPath = consumePostAuthRedirect();
+    if (returnPath) router.replace(returnPath);
   }, [isAuthenticated, authLoading, router]);
 
   // Convex queries and mutations

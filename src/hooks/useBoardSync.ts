@@ -5,6 +5,7 @@ import { useConvexAuth } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { Id } from '../../convex/_generated/dataModel'
 import { NoteColor, Session } from '@/types'
+import { rememberPostAuthRedirect } from '@/utils/postAuthRedirect'
 
 export function useBoardSync(boardId: string) {
   const router = useRouter()
@@ -30,7 +31,8 @@ export function useBoardSync(boardId: string) {
   // Auth Redirect
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      router.push('/login')
+      rememberPostAuthRedirect(`${window.location.pathname}${window.location.search}${window.location.hash}`)
+      router.replace('/login')
     }
   }, [isAuthenticated, authLoading, router])
 
