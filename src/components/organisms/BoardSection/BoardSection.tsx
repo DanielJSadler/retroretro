@@ -98,6 +98,7 @@ export default function BoardSection({
   const contentRef = useRef('')
   const draftUpdateTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const finalizeWhenReady = useRef(false)
+  const canCreateInSection = sessionPhase !== 'finished' && (sessionPhase !== 'discussion' || isActions)
 
   useEffect(() => {
     if (!resizeStart.current) {
@@ -147,7 +148,7 @@ export default function BoardSection({
   }
 
   const handleSectionClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (justDragged || creatingInSection) return
+    if (!canCreateInSection || justDragged || creatingInSection) return
     if ((e.target as HTMLElement).closest('.sticky-note')) return
 
     const rect = e.currentTarget.getBoundingClientRect()
@@ -308,7 +309,9 @@ export default function BoardSection({
 
       <div
         ref={sectionRef}
-        className="section-canvas flex-1 relative overflow-visible cursor-crosshair"
+        className={`section-canvas flex-1 relative overflow-visible ${
+          canCreateInSection ? 'cursor-crosshair' : 'cursor-default'
+        }`}
         onClick={handleSectionClick}
       >
         {isActions && topVotedRefs.length > 0 && (
@@ -402,7 +405,7 @@ export default function BoardSection({
           )
         })}
 
-        {creatingInSection === section.id && (
+        {canCreateInSection && creatingInSection === section.id && (
           <div
             className="absolute bg-white rounded-lg shadow-xl p-3 z-50 w-48"
             style={{
@@ -447,14 +450,17 @@ export default function BoardSection({
           </div>
         )}
 
-        {visibleNotes.length === 0 && creatingInSection !== section.id && !(isActions && topVotedRefs.length > 0) && (
+        {canCreateInSection &&
+          visibleNotes.length === 0 &&
+          creatingInSection !== section.id &&
+          !(isActions && topVotedRefs.length > 0) && (
           <div className="absolute inset-0 flex items-center justify-center text-gray-400 pointer-events-none">
             <div className="text-center">
               <div className="text-2xl mb-1">📝</div>
               <p className="text-xs">Click to add a note</p>
             </div>
           </div>
-        )}
+          )}
 
         {sessionPhase !== 'finished' && (
           <button

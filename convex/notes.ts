@@ -6,6 +6,21 @@ import { getAuthUserId } from '@convex-dev/auth/server'
 const NOTE_WIDTH_PERCENT = 18
 const NOTE_HEIGHT_PERCENT = 20
 
+function isActionsSection(sectionName: string) {
+  const normalizedName = sectionName.toLowerCase()
+  return (
+    normalizedName.includes('action') ||
+    normalizedName.includes('todo') ||
+    normalizedName.includes('next step')
+  )
+}
+
+function assertCanCreateNote(phase: string, sectionName: string) {
+  if (phase === 'discussion' && !isActionsSection(sectionName)) {
+    throw new Error('New notes can only be created in the Action Items area during discussion')
+  }
+}
+
 function findAvailablePosition(
   notes: { positionX: number; positionY: number }[],
   requestedPosition: { x: number; y: number }
@@ -103,6 +118,7 @@ export const create = mutation({
 
     const section = await ctx.db.get(sectionId)
     if (!section || section.boardId !== boardId) throw new Error('Section not found')
+    assertCanCreateNote(board.phase, section.name)
 
     if (sourceNoteId) {
       const sourceNote = await ctx.db.get(sourceNoteId)
@@ -141,6 +157,7 @@ export const createDraft = mutation({
 
     const section = await ctx.db.get(sectionId)
     if (!section || section.boardId !== boardId) throw new Error('Section not found')
+    assertCanCreateNote(board.phase, section.name)
 
     const notes = await ctx.db
       .query('notes')
@@ -188,6 +205,10 @@ export const finalizeDraft = mutation({
 
     const board = await ctx.db.get(note.boardId)
     if (!board || board.phase === 'finished') throw new Error('Board is finished')
+
+    const section = await ctx.db.get(note.sectionId)
+    if (!section || section.boardId !== note.boardId) throw new Error('Section not found')
+    assertCanCreateNote(board.phase, section.name)
 
     await ctx.db.patch(noteId, { content: content.trim(), isDraft: false, draftUpdatedAt: undefined })
   },
