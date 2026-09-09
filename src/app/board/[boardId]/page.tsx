@@ -10,6 +10,7 @@ import BoardCanvas from '@/components/organisms/BoardCanvas'
 import BoardSection from '@/components/organisms/BoardSection'
 import CursorOverlay from '@/components/organisms/CursorOverlay'
 import ActionConnectorLayer from '@/components/organisms/ActionConnectorLayer'
+import StickyNote from '@/components/organisms/StickyNote'
 import { Note } from '@/types'
 
 import { useBoardSync } from '@/hooks/useBoardSync'
@@ -260,6 +261,13 @@ export default function BoardPage() {
       ? [{ actionNoteId: note.id, sourceNoteId: `reference:${note.sourceNoteId}` }]
       : []
   )
+  const draggingNoteSection = draggingNote
+    ? session.sections.find(section => section.id === draggingNote.note.sectionId)
+    : undefined
+  const draggingNoteIsActions = draggingNoteSection ? notesManager.isActionsSection(draggingNoteSection) : false
+  const draggingNoteSource = draggingNote?.note.sourceNoteId
+    ? session.notes.find(note => note.id === draggingNote.note.sourceNoteId)
+    : undefined
 
   return (
     <div className="h-screen flex flex-col bg-gray-100 text-black overflow-hidden">
@@ -375,26 +383,33 @@ export default function BoardPage() {
         {draggingNote && (
           <div
             className="fixed pointer-events-none"
-            style={{ left: `${draggingNote.x}px`, top: `${draggingNote.y}px`, zIndex: 99999 }}
+            style={{
+              left: `${draggingNote.x}px`,
+              top: `${draggingNote.y}px`,
+              zIndex: 99999,
+              transform: `scale(${zoom})`,
+              transformOrigin: 'top left',
+            }}
           >
-            <div
-              className={`w-40 p-3 rounded-lg shadow-2xl scale-105 ${
-                draggingNote.note.color === 'yellow'
-                  ? 'bg-yellow-200'
-                  : draggingNote.note.color === 'blue'
-                    ? 'bg-blue-200'
-                    : draggingNote.note.color === 'green'
-                      ? 'bg-green-200'
-                      : draggingNote.note.color === 'red'
-                        ? 'bg-red-200'
-                        : 'bg-pink-200'
-              }`}
-            >
-              <div className="text-xs font-semibold text-gray-700 mb-1">{draggingNote.note.createdBy}</div>
-              <div className="text-xs text-gray-800 overflow-hidden text-ellipsis line-clamp-4">
-                {draggingNote.note.content}
-              </div>
-            </div>
+            <StickyNote
+              note={draggingNote.note}
+              canEdit={notesManager.canEditNote(draggingNote.note)}
+              canSee={true}
+              canVote={
+                !draggingNoteIsActions &&
+                (notesManager.getRemainingVotes() > 0 || notesManager.hasVotedForNote(draggingNote.note))
+              }
+              hasVoted={notesManager.hasVotedForNote(draggingNote.note)}
+              currentPhase={session.phase}
+              onUpdate={() => {}}
+              onDelete={() => {}}
+              onVote={() => {}}
+              onCreateAction={() => {}}
+              onOpenSource={() => {}}
+              showCreateAction={!draggingNoteIsActions && session.phase === 'discussion'}
+              sourceNote={draggingNoteSource}
+              isDragPreview
+            />
           </div>
         )}
 

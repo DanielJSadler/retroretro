@@ -21,6 +21,7 @@ interface StickyNoteProps {
   onOpenSource?: (sourceNoteId: string) => void;
   showCreateAction?: boolean;
   isReference?: boolean;
+  isDragPreview?: boolean;
   isFocused?: boolean;
   sourceNote?: Note;
   zoom?: number;
@@ -52,6 +53,7 @@ export default function StickyNote({
   onOpenSource,
   showCreateAction = false,
   isReference = false,
+  isDragPreview = false,
   isFocused = false,
   sourceNote,
   zoom = 1,
@@ -87,7 +89,7 @@ export default function StickyNote({
   }, [note.content]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (isEditing || isReference) return;
+    if (isEditing || isReference || isDragPreview) return;
 
     // Only drag if clicking the note background, not buttons
     if ((e.target as HTMLElement).tagName === 'BUTTON') return;
@@ -170,7 +172,7 @@ export default function StickyNote({
     return null;
   }
 
-  const positionStyle = isReference
+  const positionStyle = isReference || isDragPreview
     ? { position: 'relative' as const }
     : {
         position: 'absolute' as const,
@@ -191,7 +193,7 @@ export default function StickyNote({
       className={`absolute min-w-[200px] max-w-[300px] p-4 rounded-lg shadow-lg select-none z-20 flex flex-col gap-2 transition-colors ${
         colorClasses[note.color]
       } ${isDragging ? 'opacity-30 cursor-none' : ''} ${
-        !isDragging && !isReference ? 'cursor-grab active:cursor-grabbing' : ''
+        !isDragging && !isReference && !isDragPreview ? 'cursor-grab active:cursor-grabbing' : ''
       } ${isReference ? 'opacity-90 ring-2 ring-purple-400' : ''} ${isFocused ? 'ring-4 ring-blue-500 ring-offset-2' : ''}`}
       style={positionStyle}
       onMouseDown={handleMouseDown}
