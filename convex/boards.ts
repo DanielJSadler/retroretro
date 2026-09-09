@@ -6,6 +6,10 @@ import { getAuthUserId } from '@convex-dev/auth/server'
 const DEFAULT_SECTION_WIDTH = 900
 const DEFAULT_SECTION_HEIGHT = 650
 const SECTION_GAP = 60
+const REVEAL_LAYOUT_PADDING = 24
+const REVEAL_NOTE_COLUMN_WIDTH = 260
+const REVEAL_NOTE_HEIGHT = 150
+const SECTION_HEADER_HEIGHT = 40
 
 // Get boards that the current user has participated in
 export const list = query({
@@ -179,12 +183,101 @@ export const updatePhase = mutation({
     const userId = await getAuthUserId(ctx)
     if (!userId) throw new Error('Not authenticated')
 
+    const board = await ctx.db.get(boardId)
+    if (!board) throw new Error('Board not found')
+
     const updates: Record<string, unknown> = { phase }
     if (votesPerPerson !== undefined) {
       updates.votesPerPerson = votesPerPerson
     }
 
     await ctx.db.patch(boardId, updates)
+
+    if (phase === 'reveal' && board.phase !== 'reveal') {
+      const [sections, notes] = await Promise.all([
+        ctx.db
+          .query('sections')
+          .withIndex('by_board', q => q.eq('boardId', boardId))
+          .collect(),
+        ctx.db
+          .query('notes')
+          .withIndex('by_board', q => q.eq('boardId', boardId))
+          .collect(),
+      ])
+
+      const creatorIds = [...new Set(notes.map(note => note.createdBy))]
+      const creators = await Promise.all(creatorIds.map(async id => [id, await ctx.db.get(id)] as const))
+      const creatorNames = new Map(creators.map(([id, creator]) => [id, creator?.name ?? 'Unknown']))
+
+      for (const section of sections) {
+        const sectionNotes = notes.filter(note => note.sectionId === section._id)
+        if (sectionNotes.length === 0) continue
+
+        const notesByCreator = new Map<(typeof sectionNotes)[number]['createdBy'], typeof sectionNotes>()
+        for (const note of sectionNotes) {
+          const creatorNotes = notesByCreator.get(note.createdBy) ?? []
+          creatorNotes.push(note)
+          notesByCreator.set(note.createdBy, creatorNotes)
+        }
+
+        const creatorGroups = [...notesByCreator.entries()].sort(([leftId], [rightId]) => {
+          const nameOrder = (creatorNames.get(leftId) ?? '').localeCompare(creatorNames.get(rightId) ?? '')
+          return nameOrder || leftId.localeCompare(rightId)
+        })
+        const sectionWidth = section.width ?? DEFAULT_SECTION_WIDTH
+        const sectionHeight = section.height ?? DEFAULT_SECTION_HEIGHT
+        const canvasHeight = Math.max(1, sectionHeight - SECTION_HEADER_HEIGHT)
+        const usableWidth = Math.max(REVEAL_NOTE_COLUMN_WIDTH, sectionWidth - REVEAL_LAYOUT_PADDING * 2)
+        const columns = Math.max(1, Math.floor(usableWidth / REVEAL_NOTE_COLUMN_WIDTH))
+        const columnWidth = usableWidth / columns
+        const placements: { noteId: (typeof sectionNotes)[number]['_id']; column: number; row: number }[] = []
+        let shelfColumn = 0
+        let shelfRow = 0
+        let shelfHeight = 1
+
+        for (const [, creatorNotes] of creatorGroups) {
+          creatorNotes.sort((left, right) => left._creationTime - right._creationTime)
+          const groupWidth = Math.min(columns, Math.max(1, Math.round(Math.sqrt(creatorNotes.length))))
+          const groupHeight = Math.ceil(creatorNotes.length / groupWidth)
+
+          if (shelfColumn + groupWidth > columns) {
+            shelfRow += shelfHeight
+            shelfColumn = 0
+            shelfHeight = 1
+          }
+
+          creatorNotes.forEach((note, index) => {
+            placements.push({
+              noteId: note._id,
+              column: shelfColumn + (index % groupWidth),
+              row: shelfRow + Math.floor(index / groupWidth),
+            })
+          })
+
+          shelfColumn += groupWidth
+          shelfHeight = Math.max(shelfHeight, groupHeight)
+          if (shelfColumn === columns) {
+            shelfRow += shelfHeight
+            shelfColumn = 0
+            shelfHeight = 1
+          }
+        }
+
+        const lastRow = Math.max(0, ...placements.map(placement => placement.row))
+        const availableVerticalSpace = Math.max(
+          0,
+          canvasHeight - REVEAL_LAYOUT_PADDING * 2 - REVEAL_NOTE_HEIGHT
+        )
+        const rowStep = lastRow === 0 ? 0 : Math.min(REVEAL_NOTE_HEIGHT, availableVerticalSpace / lastRow)
+
+        for (const placement of placements) {
+          await ctx.db.patch(placement.noteId, {
+            positionX: ((REVEAL_LAYOUT_PADDING + placement.column * columnWidth) / sectionWidth) * 100,
+            positionY: ((REVEAL_LAYOUT_PADDING + placement.row * rowStep) / canvasHeight) * 100,
+          })
+        }
+      }
+    }
 
     if (phase === 'voting') {
       const statuses = await ctx.db
