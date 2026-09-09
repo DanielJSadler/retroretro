@@ -284,7 +284,10 @@ export default function BoardPage() {
         getRemainingVotes={notesManager.getRemainingVotes}
         votingStatus={session.votingStatus}
         timerExpired={timerExpired}
-        onDismissTimer={() => setTimerExpired(false)}
+        onDismissTimer={() => {
+          setTimerExpired(false)
+          void handleResetTimer()
+        }}
       />
 
       <div className="flex-1 flex overflow-hidden">
