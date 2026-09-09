@@ -138,39 +138,8 @@ export default function Sidebar({
                 ✕
               </button>
             </div>
-
-            {!iframeExpanded && (
-              <button
-                onClick={() => setIframeExpanded(true)}
-                className="absolute top-2 right-2 z-10 p-1.5 bg-white/90 hover:bg-white rounded-md shadow-sm border border-gray-200 text-gray-500 hover:text-gray-800 transition-colors"
-                title="Expand"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="15 3 21 3 21 9" />
-                  <polyline points="9 21 3 21 3 15" />
-                  <line x1="21" y1="3" x2="14" y2="10" />
-                  <line x1="3" y1="21" x2="10" y2="14" />
-                </svg>
-              </button>
-            )}
-
-            <iframe
-              src="https://demo.p3bbl3.com/"
-              className={iframeExpanded ? 'flex-1 w-full h-full border-0 rounded-b-xl' : 'w-full h-[500px] border-0'}
-            />
           </div>
         </div>
-
       </aside>
     </>
   )
