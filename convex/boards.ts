@@ -8,7 +8,8 @@ const DEFAULT_SECTION_HEIGHT = 650
 const SECTION_GAP = 60
 const REVEAL_LAYOUT_PADDING = 24
 const REVEAL_NOTE_COLUMN_WIDTH = 260
-const REVEAL_NOTE_HEIGHT = 150
+// Reserve enough height for the vote and action controls that appear after Reveal.
+const REVEAL_NOTE_HEIGHT = 190
 const SECTION_HEADER_HEIGHT = 40
 
 // Get boards that the current user has participated in
