@@ -211,6 +211,11 @@ export const updatePhase = mutation({
       const creatorNames = new Map(creators.map(([id, creator]) => [id, creator?.name ?? 'Unknown']))
 
       for (const section of sections) {
+        const sectionName = section.name.toLowerCase()
+        const isActionsSection =
+          sectionName.includes('action') || sectionName.includes('todo') || sectionName.includes('next step')
+        if (isActionsSection) continue
+
         const sectionNotes = notes.filter(note => note.sectionId === section._id)
         if (sectionNotes.length === 0) continue
 
