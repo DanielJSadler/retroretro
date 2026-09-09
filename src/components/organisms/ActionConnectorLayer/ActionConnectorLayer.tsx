@@ -14,6 +14,7 @@ interface Point {
 
 interface Connector {
   actionNoteId: string
+  axis: 'horizontal' | 'vertical'
   end: Point
   start: Point
 }
@@ -35,7 +36,16 @@ function getEdgePoints(source: DOMRect, action: DOMRect, board: DOMRect, zoom: n
     x: action.left + action.width / 2,
     y: action.top + action.height / 2,
   }
-  const horizontal = Math.abs(actionCenter.x - sourceCenter.x) >= Math.abs(actionCenter.y - sourceCenter.y)
+  const horizontalGap = Math.max(action.left - source.right, source.left - action.right, 0)
+  const verticalGap = Math.max(action.top - source.bottom, source.top - action.bottom, 0)
+  let axis: Connector['axis']
+  if (verticalGap === 0) {
+    axis = 'horizontal'
+  } else if (horizontalGap === 0) {
+    axis = 'vertical'
+  } else {
+    axis = horizontalGap < verticalGap ? 'horizontal' : 'vertical'
+  }
   const movesRight = actionCenter.x >= sourceCenter.x
   const movesDown = actionCenter.y >= sourceCenter.y
 
@@ -44,14 +54,16 @@ function getEdgePoints(source: DOMRect, action: DOMRect, board: DOMRect, zoom: n
     y: (point.y - board.top) / zoom,
   })
 
-  if (horizontal) {
+  if (axis === 'horizontal') {
     return {
+      axis,
       start: toBoardPoint({ x: movesRight ? source.right : source.left, y: sourceCenter.y }),
       end: toBoardPoint({ x: movesRight ? action.left : action.right, y: actionCenter.y }),
     }
   }
 
   return {
+    axis,
     start: toBoardPoint({ x: sourceCenter.x, y: movesDown ? source.bottom : source.top }),
     end: toBoardPoint({ x: actionCenter.x, y: movesDown ? action.top : action.bottom }),
   }
@@ -82,8 +94,13 @@ export default function ActionConnectorLayer({
           const action = noteRefs.current.get(link.actionNoteId)
           if (!source || !action) return []
 
-          const { start, end } = getEdgePoints(source.getBoundingClientRect(), action.getBoundingClientRect(), boardRect, zoom)
-          return [{ actionNoteId: link.actionNoteId, start, end }]
+          const { axis, start, end } = getEdgePoints(
+            source.getBoundingClientRect(),
+            action.getBoundingClientRect(),
+            boardRect,
+            zoom
+          )
+          return [{ actionNoteId: link.actionNoteId, axis, start, end }]
         })
       )
     }
@@ -118,9 +135,9 @@ export default function ActionConnectorLayer({
           <path d="M 0 0 L 8 4 L 0 8 z" fill="#7c3aed" />
         </marker>
       </defs>
-      {connectors.map(({ actionNoteId, start, end }) => {
+      {connectors.map(({ actionNoteId, axis, start, end }) => {
         const controlDistance = Math.max(40, Math.min(180, Math.hypot(end.x - start.x, end.y - start.y) / 2))
-        const horizontal = Math.abs(end.x - start.x) >= Math.abs(end.y - start.y)
+        const horizontal = axis === 'horizontal'
         const controlOne = horizontal ? { x: start.x + (end.x >= start.x ? controlDistance : -controlDistance), y: start.y } : { x: start.x, y: start.y + (end.y >= start.y ? controlDistance : -controlDistance) }
         const controlTwo = horizontal ? { x: end.x - (end.x >= start.x ? controlDistance : -controlDistance), y: end.y } : { x: end.x, y: end.y - (end.y >= start.y ? controlDistance : -controlDistance) }
 
