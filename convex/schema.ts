@@ -113,4 +113,34 @@ export default defineSchema({
     velocity: v.number(),
     distance: v.number(),
   }).index('by_board', ['boardId']),
+
+  // Planning Poker rooms are guest-accessible and independent of retro boards.
+  sessions: defineTable({
+    roomCode: v.string(),
+    status: v.union(v.literal('voting'), v.literal('revealed')),
+    round: v.number(),
+    moderatorId: v.string(),
+    createdAt: v.number(),
+  })
+    .index('by_roomCode', ['roomCode'])
+    .index('by_moderatorId', ['moderatorId']),
+
+  players: defineTable({
+    sessionId: v.id('sessions'),
+    name: v.string(),
+    hasVoted: v.boolean(),
+    isModerator: v.boolean(),
+    isConnected: v.boolean(),
+    disambiguator: v.optional(v.number()),
+  }).index('by_sessionId', ['sessionId']),
+
+  pokerVotes: defineTable({
+    sessionId: v.id('sessions'),
+    playerId: v.id('players'),
+    playerName: v.string(),
+    value: v.union(v.number(), v.null()),
+    round: v.number(),
+  })
+    .index('by_session_round', ['sessionId', 'round'])
+    .index('by_playerId', ['playerId']),
 })
