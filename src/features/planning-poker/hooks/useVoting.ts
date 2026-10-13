@@ -8,6 +8,7 @@ export function useVoting() {
   const createSession = useMutation(api.sessions.createSession);
   const joinSession = useMutation(api.sessions.joinSession);
   const updatePlayerStatus = useMutation(api.sessions.updatePlayerStatus);
+  const changeDeck = useMutation(api.sessions.changeDeck);
 
   return {
     submitVote,
@@ -16,5 +17,6 @@ export function useVoting() {
     createSession,
     joinSession,
     updatePlayerStatus,
+    changeDeck,
   };
 }

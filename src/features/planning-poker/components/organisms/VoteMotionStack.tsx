@@ -28,7 +28,7 @@ export function VoteMotionStack({ count, revealed }: VoteMotionStackProps) {
             transitionDelay: `${Math.min(index * 45, 180)}ms`,
           }}
         >
-          <VoteCard value={null} isSelected={false} onClick={() => {}} disabled />
+          <VoteCard value="" isSelected={false} onClick={() => {}} disabled className="w-28" />
         </div>
       ))}
     </div>

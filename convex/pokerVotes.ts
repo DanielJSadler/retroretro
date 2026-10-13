@@ -1,11 +1,12 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { getRoomDeck, voteLabel } from "../src/features/planning-poker/lib/decks";
 
 export const submitVote = mutation({
   args: {
     sessionId: v.id("sessions"),
     playerId: v.id("players"),
-    value: v.union(v.number(), v.null()),
+    value: v.union(v.string(), v.number(), v.null()),
   },
   handler: async (ctx, args) => {
     const session = await ctx.db.get(args.sessionId);
@@ -14,6 +15,14 @@ export const submitVote = mutation({
 
     const player = await ctx.db.get(args.playerId);
     if (!player) throw new Error("Player not found");
+    if (player.sessionId !== args.sessionId) throw new Error("Player is not in this room");
+    const deck = getRoomDeck(session);
+    if (
+      (session.deck && typeof args.value !== "string") ||
+      !deck.cards.includes(voteLabel(args.value))
+    ) {
+      throw new Error("This card is not in the room's deck");
+    }
 
     const existing = await ctx.db
       .query("pokerVotes")

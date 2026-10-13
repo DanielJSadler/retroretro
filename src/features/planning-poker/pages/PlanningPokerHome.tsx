@@ -12,6 +12,8 @@ import { JoinForm } from "../components/molecules/JoinForm";
 import { Button } from "../components/atoms/Button";
 import { Input } from "../components/atoms/Input";
 import { Card } from "../components/atoms/Card";
+import { DeckPicker, type DeckChoice } from "../components/organisms/DeckPicker";
+import { validateCustomCards, validateDeckName } from "../lib/decks";
 
 type Mode = "landing" | "create" | "join";
 
@@ -26,19 +28,24 @@ export default function PlanningPokerHome() {
   const [roomCode, setRoomCode] = useState("");
   const [joinError, setJoinError] = useState("");
   const [mode, setMode] = useState<Mode>("landing");
+  const [deckChoice, setDeckChoice] = useState<DeckChoice>({ kind: "preset", presetId: "fibonacci" });
 
   const handleCreate = async (name: string) => {
     setIsCreating(true);
     try {
-      const result = await createSession({ playerName: name });
+      if (deckChoice.kind === "custom") {
+        validateCustomCards(deckChoice.cards);
+        if (currentUser) validateDeckName(deckChoice.name);
+      }
+      const result = await createSession({ playerName: name, deckSelection: deckChoice });
       savePlayer({
         playerId: result.playerId,
         name,
         sessionId: result.sessionId,
       });
       router.push(`/planning-poker/room/${result.roomCode}`);
-    } catch {
-      addToast("Could not create a session. Please try again.");
+    } catch (cause) {
+      addToast(cause instanceof Error ? cause.message : "Could not create a session. Please try again.");
       setIsCreating(false);
     }
   };
@@ -116,7 +123,9 @@ export default function PlanningPokerHome() {
               initialName={currentUser?.name ?? ""}
               buttonText="Create Session"
               isLoading={isCreating}
-            />
+            >
+              <DeckPicker value={deckChoice} onChange={setDeckChoice} isSignedIn={!!currentUser} />
+            </JoinForm>
           </Card>
         )}
 

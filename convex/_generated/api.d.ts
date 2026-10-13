@@ -18,6 +18,7 @@ import type * as music from "../music.js";
 import type * as notes from "../notes.js";
 import type * as participants from "../participants.js";
 import type * as players from "../players.js";
+import type * as pokerDecks from "../pokerDecks.js";
 import type * as pokerVotes from "../pokerVotes.js";
 import type * as sessions from "../sessions.js";
 import type * as timer from "../timer.js";
@@ -40,6 +41,7 @@ declare const fullApi: ApiFromModules<{
   notes: typeof notes;
   participants: typeof participants;
   players: typeof players;
+  pokerDecks: typeof pokerDecks;
   pokerVotes: typeof pokerVotes;
   sessions: typeof sessions;
   timer: typeof timer;

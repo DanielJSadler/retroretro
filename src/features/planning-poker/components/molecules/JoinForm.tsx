@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Input } from "../atoms/Input";
 import { Button } from "../atoms/Button";
 
@@ -7,9 +7,10 @@ interface JoinFormProps {
   initialName?: string;
   buttonText?: string;
   isLoading?: boolean;
+  children?: ReactNode;
 }
 
-export function JoinForm({ onSubmit, initialName = "", buttonText = "Join", isLoading }: JoinFormProps) {
+export function JoinForm({ onSubmit, initialName = "", buttonText = "Join", isLoading, children }: JoinFormProps) {
   const [name, setName] = useState(initialName);
   const [error, setError] = useState("");
   const [hasEditedName, setHasEditedName] = useState(false);
@@ -45,6 +46,7 @@ export function JoinForm({ onSubmit, initialName = "", buttonText = "Join", isLo
         error={error}
         autoFocus
       />
+      {children}
       <Button type="submit" isLoading={isLoading} className="w-full">
         {buttonText}
       </Button>

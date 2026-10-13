@@ -1,5 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { deckSelection, resolveDeckSelection } from "./pokerDecks";
+import { PRESET_DECKS } from "../src/features/planning-poker/lib/decks";
 
 function generateRoomCode(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -11,8 +13,11 @@ function generateRoomCode(): string {
 }
 
 export const createSession = mutation({
-  args: { playerName: v.string() },
+  args: { playerName: v.string(), deckSelection: v.optional(deckSelection) },
   handler: async (ctx, args) => {
+    const deck = args.deckSelection
+      ? await resolveDeckSelection(ctx, args.deckSelection)
+      : { name: PRESET_DECKS.fibonacci.name, cards: [...PRESET_DECKS.fibonacci.cards] };
     const roomCode = generateRoomCode();
     const sessionId = await ctx.db.insert("sessions", {
       roomCode,
@@ -20,6 +25,7 @@ export const createSession = mutation({
       round: 1,
       moderatorId: "temp",
       createdAt: Date.now(),
+      deck,
     });
 
     const playerId = await ctx.db.insert("players", {
@@ -33,6 +39,54 @@ export const createSession = mutation({
     await ctx.db.patch(sessionId, { moderatorId: playerId });
 
     return { sessionId, roomCode, playerId };
+  },
+});
+
+export const changeDeck = mutation({
+  args: {
+    sessionId: v.id("sessions"),
+    playerId: v.id("players"),
+    deckSelection,
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) throw new Error("Session not found.");
+    const moderator = await ctx.db.get(args.playerId);
+    if (
+      !moderator ||
+      moderator.sessionId !== args.sessionId ||
+      session.moderatorId !== args.playerId
+    ) {
+      throw new Error("Only the room creator can change the deck.");
+    }
+
+    if (session.status === "voting") {
+      const currentVotes = await ctx.db
+        .query("pokerVotes")
+        .withIndex("by_session_round", (q) =>
+          q.eq("sessionId", args.sessionId).eq("round", session.round)
+        )
+        .first();
+      if (currentVotes) throw new Error("Reveal or reset the current round first.");
+    }
+
+    const deck = await resolveDeckSelection(ctx, args.deckSelection);
+    if (session.status === "revealed") {
+      const players = await ctx.db
+        .query("players")
+        .withIndex("by_sessionId", (q) => q.eq("sessionId", args.sessionId))
+        .collect();
+      for (const player of players) {
+        await ctx.db.patch(player._id, { hasVoted: false });
+      }
+      await ctx.db.patch(args.sessionId, {
+        deck,
+        status: "voting",
+        round: session.round + 1,
+      });
+    } else {
+      await ctx.db.patch(args.sessionId, { deck });
+    }
   },
 });
 

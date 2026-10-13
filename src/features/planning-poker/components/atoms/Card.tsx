@@ -2,7 +2,7 @@ import { type ReactNode, type HTMLAttributes, forwardRef } from "react";
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
-  variant?: "default" | "outlined" | "elevated" | "bare";
+  variant?: "default" | "outlined" | "elevated";
 }
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
@@ -11,7 +11,6 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
       default: "bg-slate-900",
       outlined: "border border-slate-800 bg-slate-900",
       elevated: "bg-slate-900 shadow-lg",
-      bare: "",
     };
 
     return (

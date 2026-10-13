@@ -19,6 +19,16 @@ import { JoinForm } from "../components/molecules/JoinForm";
 import { Spinner } from "../components/atoms/Spinner";
 import { ConfettiBurst } from "../components/atoms/ConfettiBurst";
 import { calculateOutliers } from "../lib/constants";
+import {
+  getNumericScale,
+  getRoomDeck,
+  numericVote,
+  validateCustomCards,
+  validateDeckName,
+  voteLabel,
+} from "../lib/decks";
+import { DeckPicker, type DeckChoice } from "../components/organisms/DeckPicker";
+import { Button } from "../components/atoms/Button";
 
 export default function PlanningPokerRoom() {
   const params = useParams<{ roomCode: string }>();
@@ -31,6 +41,7 @@ export default function PlanningPokerRoom() {
     resetRound,
     joinSession,
     updatePlayerStatus,
+    changeDeck,
   } = useVoting();
   const { addToast } = useToast();
 
@@ -56,9 +67,17 @@ export default function PlanningPokerRoom() {
       : "skip",
   );
   const currentUser = useQuery(api.users.current);
+  const deck = getRoomDeck(session);
+  const normalizedVotes = useMemo(
+    () => votes?.map((vote) => ({ ...vote, value: voteLabel(vote.value) })) ?? null,
+    [votes],
+  );
 
-  const [selectedVote, setSelectedVote] = useState<number | null>(null);
+  const [selectedVote, setSelectedVote] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
+  const [showDeckPicker, setShowDeckPicker] = useState(false);
+  const [deckChoice, setDeckChoice] = useState<DeckChoice>({ kind: "preset", presetId: "fibonacci" });
+  const [isChangingDeck, setIsChangingDeck] = useState(false);
   const [isPiPEnabled, setIsPiPEnabled] = useState(false);
   const pipWindowRef = useRef<Window | null>(null);
   const pipRootRef = useRef<Root | null>(null);
@@ -70,8 +89,9 @@ export default function PlanningPokerRoom() {
   }, [player, players]);
 
   const handleVote = useCallback(
-    async (value: number | null) => {
+    async (value: string) => {
       if (!session || !player || !currentPlayer) return;
+      setShowDeckPicker(false);
       setSelectedVote(value);
       try {
         await submitVote({
@@ -105,6 +125,28 @@ export default function PlanningPokerRoom() {
     }
   }, [addToast, resetRound, session]);
 
+  const handleChangeDeck = async () => {
+    if (!session || !player) return;
+    try {
+      if (deckChoice.kind === "custom") {
+        validateCustomCards(deckChoice.cards);
+        if (currentUser) validateDeckName(deckChoice.name);
+      }
+      setIsChangingDeck(true);
+      await changeDeck({
+        sessionId: session._id,
+        playerId: player.playerId as never,
+        deckSelection: deckChoice,
+      });
+      setSelectedVote(null);
+      setShowDeckPicker(false);
+    } catch (cause) {
+      addToast(cause instanceof Error ? cause.message : "Could not change the deck.");
+    } finally {
+      setIsChangingDeck(false);
+    }
+  };
+
   const syncPiPStyles = (pipWindow: Window) => {
     pipWindow.document.head.innerHTML = "";
     document.querySelectorAll("style, link[rel='stylesheet']").forEach((node) => {
@@ -134,9 +176,10 @@ export default function PlanningPokerRoom() {
       pipRootRef.current.render(
         <PiPView
           roomCode={roomCode}
+          deck={deck}
           status={session?.status ?? "voting"}
           selectedVote={selectedVote}
-          votes={votes ?? null}
+          votes={normalizedVotes}
           isModerator={isModerator(session?.moderatorId ?? "")}
           onVote={handleVote}
           onReveal={handleReveal}
@@ -181,16 +224,17 @@ export default function PlanningPokerRoom() {
     pipRootRef.current.render(
       <PiPView
         roomCode={roomCode}
+        deck={deck}
         status={session?.status ?? "voting"}
         selectedVote={selectedVote}
-        votes={votes ?? null}
+        votes={normalizedVotes}
         isModerator={isModerator(session?.moderatorId ?? "")}
         onVote={handleVote}
         onReveal={handleReveal}
         onReset={handleReset}
       />,
     );
-  }, [handleReveal, handleReset, handleVote, isModerator, roomCode, selectedVote, session?.moderatorId, session?.status, votes]);
+  }, [handleReveal, handleReset, handleVote, isModerator, roomCode, deck, selectedVote, session?.moderatorId, session?.status, normalizedVotes]);
 
   const togglePiP = async () => {
     const nextEnabled = !isPiPEnabled;
@@ -230,29 +274,33 @@ export default function PlanningPokerRoom() {
 
   useEffect(() => {
     if (currentVote?.value !== undefined) {
-      setSelectedVote(currentVote.value);
+      setSelectedVote(voteLabel(currentVote.value));
     } else if (session?.status === "voting") {
       setSelectedVote(null);
     }
   }, [currentVote, session?.status]);
 
   const outlierIds = useMemo(() => {
-    if (!votes) return new Set<string>();
-    const outlierIndices = calculateOutliers(votes.map((vote) => vote.value));
+    if (!normalizedVotes) return new Set<string>();
+    const scale = getNumericScale(deck);
+    if (!scale) return new Set<string>();
+    const outlierIndices = calculateOutliers(
+      normalizedVotes.map((vote) => numericVote(vote.value, scale)),
+    );
     const ids = new Set<string>();
-    votes.forEach((vote, index) => {
+    normalizedVotes.forEach((vote, index) => {
       if (outlierIndices.has(index)) ids.add(vote.playerId);
     });
     return ids;
-  }, [votes]);
+  }, [deck, normalizedVotes]);
 
   const shouldCelebrate = useMemo(() => {
-    if (session?.status !== "revealed" || !votes || votes.length === 0) return false;
-    const numericVotes = votes
+    if (session?.status !== "revealed" || !normalizedVotes || normalizedVotes.length === 0) return false;
+    const scoredVotes = normalizedVotes
       .map((vote) => vote.value)
-      .filter((value): value is number => value !== null);
-    return numericVotes.length > 0 && numericVotes.every((value) => value === numericVotes[0]);
-  }, [session?.status, votes]);
+      .filter((value) => value !== "?");
+    return scoredVotes.length > 0 && scoredVotes.every((value) => value === scoredVotes[0]);
+  }, [session?.status, normalizedVotes]);
 
   if (session === null) {
     return (
@@ -308,10 +356,12 @@ export default function PlanningPokerRoom() {
 
   const activePlayers = players.filter((candidate) => candidate.isConnected);
   const voteCount = activePlayers.filter((candidate) => candidate.hasVoted).length;
+  const canChangeDeck = session.status === "revealed" || !players.some((candidate) => candidate.hasVoted);
 
   return (
     <GameLayout
       roomCode={roomCode}
+      deckName={deck.name}
       status={session.status}
       players={activePlayers}
       tableOverlay={<VoteMotionStack count={voteCount} revealed={session.status === "revealed"} />}
@@ -324,13 +374,32 @@ export default function PlanningPokerRoom() {
           onReveal={handleReveal}
           onReset={handleReset}
           onOpenPiP={togglePiP}
+          onChangeDeck={() => {
+            setDeckChoice({ kind: "preset", presetId: "fibonacci" });
+            setShowDeckPicker((show) => !show);
+          }}
+          canChangeDeck={canChangeDeck}
         />
-        {session.status === "voting" && (
-          <VoteCardsPanel selectedValue={selectedVote} onVote={handleVote} />
+        {showDeckPicker && canChangeDeck && isModerator(session.moderatorId) && (
+          <div className="max-w-lg space-y-4 rounded-xl border border-slate-800 bg-slate-900 p-5">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-100">Change card deck</h2>
+              <p className="text-sm text-slate-400">Current: {deck.name}. Changing after reveal starts a new round.</p>
+            </div>
+            <DeckPicker value={deckChoice} onChange={setDeckChoice} isSignedIn={!!currentUser} />
+            <div className="flex gap-2">
+              <Button type="button" onClick={() => void handleChangeDeck()} isLoading={isChangingDeck}>Use this deck</Button>
+              <Button type="button" variant="secondary" onClick={() => setShowDeckPicker(false)}>Cancel</Button>
+            </div>
+          </div>
         )}
-        {session.status === "revealed" && votes && (
+        {session.status === "voting" && (
+          <VoteCardsPanel cards={deck.cards} selectedValue={selectedVote} onVote={handleVote} />
+        )}
+        {session.status === "revealed" && normalizedVotes && (
           <RevealPanel
-            votes={votes.map((vote) => ({
+            deck={deck}
+            votes={normalizedVotes.map((vote) => ({
               playerId: vote.playerId,
               playerName: vote.playerName,
               value: vote.value,

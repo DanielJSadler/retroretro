@@ -3,30 +3,31 @@ import { ResultsChart } from './ResultsChart';
 import { VoteCard } from '../molecules/VoteCard';
 import { Button } from '../atoms/Button';
 import { RoomHeader } from './RoomHeader';
+import type { PokerDeck } from '../../lib/decks';
 
 type Status = 'voting' | 'revealed';
 
 interface Vote {
   playerId: string;
   playerName: string;
-  value: number | null;
+  value: string;
 }
 
 interface PiPViewProps {
   roomCode: string;
+  deck: PokerDeck;
   status: Status;
-  selectedVote: number | null;
+  selectedVote: string | null;
   votes: Vote[] | null;
   isModerator: boolean;
-  onVote: (value: number | null) => void;
+  onVote: (value: string) => void;
   onReveal: () => void;
   onReset: () => void;
 }
 
-const VOTE_VALUES = [1, 2, 3, 5, 8, 13, 21, null];
-
 export function PiPView({
   roomCode,
+  deck,
   status,
   selectedVote,
   votes,
@@ -40,23 +41,28 @@ export function PiPView({
   return (
     <div id="planning-poker" className="dark min-h-screen bg-slate-950 p-3 text-slate-100">
       <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-[420px] flex-col justify-between gap-4">
-        <RoomHeader roomCode={roomCode} status={status} onReset={onReset} />
+        <RoomHeader
+          roomCode={roomCode}
+          deckName={deck.name}
+          status={status}
+          onReset={isModerator && status === 'revealed' ? onReset : undefined}
+        />
         {status === 'voting' ? (
           <>
             <div className="flex flex-1 flex-col rounded-xl border border-slate-800 bg-slate-900/80 p-4">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <p className="text-sm font-medium text-slate-200">Cast vote</p>
               </div>
-              <div className="grid flex-1 grid-cols-4 gap-3">
-                {VOTE_VALUES.map((value) => (
+              <div className="grid max-h-[55vh] flex-1 grid-cols-4 gap-3 overflow-y-auto">
+                {deck.cards.map((value) => (
                   <Button
-                    key={value === null ? 'question' : value}
+                    key={value}
                     variant={selectedVote === value ? 'primary' : 'secondary'}
                     size="md"
                     onClick={() => onVote(value)}
-                    className="min-h-20 px-2 text-base"
+                    className="min-h-20 break-words px-2 text-sm"
                   >
-                    {value ?? '?'}
+                    {value}
                   </Button>
                 ))}
               </div>
@@ -75,11 +81,12 @@ export function PiPView({
             <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
               <div className="flex flex-row items-center gap-3">
                 <div className="rounded-lg bg-slate-950/70 p-2">
-                  <AverageDisplay votes={voteValues} />
+                  <AverageDisplay votes={voteValues} deck={deck} />
                 </div>
                 <div className="w-full">
                   <ResultsChart
                     votes={voteValues.map((value) => ({ value }))}
+                    deck={deck}
                   />
                 </div>
               </div>

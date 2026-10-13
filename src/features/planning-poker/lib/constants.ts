@@ -1,5 +1,3 @@
-export const FIBONACCI = [1, 2, 3, 5, 8, 13, 21, null] as const;
-
 export function generateRoomCode(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let code = "";

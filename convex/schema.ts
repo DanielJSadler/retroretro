@@ -121,6 +121,10 @@ export default defineSchema({
     round: v.number(),
     moderatorId: v.string(),
     createdAt: v.number(),
+    deck: v.optional(v.object({
+      name: v.string(),
+      cards: v.array(v.string()),
+    })),
   })
     .index('by_roomCode', ['roomCode'])
     .index('by_moderatorId', ['moderatorId']),
@@ -138,9 +142,17 @@ export default defineSchema({
     sessionId: v.id('sessions'),
     playerId: v.id('players'),
     playerName: v.string(),
-    value: v.union(v.number(), v.null()),
+    value: v.union(v.string(), v.number(), v.null()),
     round: v.number(),
   })
     .index('by_session_round', ['sessionId', 'round'])
     .index('by_playerId', ['playerId']),
+
+  pokerDecks: defineTable({
+    userId: v.id('users'),
+    name: v.string(),
+    cards: v.array(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index('by_user', ['userId']),
 })

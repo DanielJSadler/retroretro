@@ -1,4 +1,4 @@
-import { Eye, PictureInPicture2, RotateCcw } from 'lucide-react';
+import { Eye, Layers3, PictureInPicture2, RotateCcw } from 'lucide-react';
 import { Button } from '../atoms/Button';
 
 interface SessionControlsProps {
@@ -7,6 +7,8 @@ interface SessionControlsProps {
   onReveal: () => void;
   onReset: () => void;
   onOpenPiP?: () => void;
+  onChangeDeck: () => void;
+  canChangeDeck: boolean;
 }
 
 export function SessionControls({
@@ -15,6 +17,8 @@ export function SessionControls({
   onReveal,
   onReset,
   onOpenPiP,
+  onChangeDeck,
+  canChangeDeck,
 }: SessionControlsProps) {
   return (
     <div className="flex flex-wrap gap-3">
@@ -34,6 +38,14 @@ export function SessionControls({
         <Button onClick={onReset} variant="secondary" className="gap-2">
           <RotateCcw size={18} />
           Reset Round
+        </Button>
+      )}
+      {isModerator && (
+        <Button type="button" onClick={onChangeDeck} disabled={!canChangeDeck}
+          title={canChangeDeck ? "Choose cards for this room" : "Reveal or reset the current round first"}
+          variant="secondary" className="gap-2">
+          <Layers3 size={18} />
+          Change Deck
         </Button>
       )}
     </div>

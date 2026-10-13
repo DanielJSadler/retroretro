@@ -1,26 +1,23 @@
 import { useMemo } from "react";
+import type { PokerDeck } from "../../lib/decks";
 
 interface Vote {
-  value: number | null;
+  value: string;
 }
 
 interface ResultsChartProps {
   votes: Vote[];
+  deck: PokerDeck;
 }
 
-export function ResultsChart({ votes }: ResultsChartProps) {
+export function ResultsChart({ votes, deck }: ResultsChartProps) {
   const distribution = useMemo(() => {
     const counts = new Map<string, number>();
     votes.forEach((v) => {
-      const key = v.value === null ? "?" : String(v.value);
-      counts.set(key, (counts.get(key) || 0) + 1);
+      counts.set(v.value, (counts.get(v.value) || 0) + 1);
     });
-    return Array.from(counts.entries()).sort((a, b) => {
-      if (a[0] === "?") return 1;
-      if (b[0] === "?") return -1;
-      return Number(a[0]) - Number(b[0]);
-    });
-  }, [votes]);
+    return deck.cards.filter((card) => counts.has(card)).map((card) => [card, counts.get(card)!] as const);
+  }, [deck.cards, votes]);
 
   const maxCount = Math.max(...distribution.map(([, count]) => count), 1);
   const total = votes.length;
@@ -37,7 +34,7 @@ export function ResultsChart({ votes }: ResultsChartProps) {
           const percentage = (count / maxCount) * 100;
           return (
             <div key={value} className="flex items-center gap-3">
-              <span className="w-8 text-sm font-medium text-slate-300">
+              <span className="w-16 break-words text-sm font-medium text-slate-300">
                 {value}
               </span>
               <div className="flex-1">

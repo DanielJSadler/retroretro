@@ -14,6 +14,7 @@ interface Player {
 
 interface GameLayoutProps {
   roomCode: string;
+  deckName: string;
   status: "voting" | "revealed";
   players: Player[];
   children: ReactNode;
@@ -21,12 +22,12 @@ interface GameLayoutProps {
   isReconnecting?: boolean;
 }
 
-export function GameLayout({ roomCode, status, players, children, tableOverlay, isReconnecting }: GameLayoutProps) {
+export function GameLayout({ roomCode, deckName, status, players, children, tableOverlay, isReconnecting }: GameLayoutProps) {
   return (
     <div className="mx-auto max-w-7xl p-4">
       <ReconnectingBanner isVisible={isReconnecting ?? false} />
       <div className="mb-4">
-        <RoomHeader roomCode={roomCode} status={status} />
+        <RoomHeader roomCode={roomCode} deckName={deckName} status={status} />
       </div>
       <div className="flex flex-col gap-6 pt-4 md:pt-8">
         <TableSeats players={players} overlay={tableOverlay} />
