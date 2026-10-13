@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import CreateBoardForm, { SectionInput } from '@/components/organisms/CreateBoardForm';
 import JoinBoardForm from '@/components/organisms/JoinBoardForm';
 import FolderList from '@/components/organisms/FolderList';
@@ -75,6 +76,21 @@ export default function HomeTemplate({
           <CreateBoardForm onSubmit={onCreateBoard} disabled={!name.trim()} />
           <JoinBoardForm onSubmit={onJoinBoard} disabled={!name.trim()} />
         </div>
+
+        <section className="bg-white rounded-2xl shadow-2xl p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-gray-800">Ready to estimate a task?</h2>
+            <p className="mt-1 text-gray-600">
+              Start a Planning Poker session and estimate work together.
+            </p>
+          </div>
+          <Link
+            href="/planning-poker"
+            className="inline-flex shrink-0 items-center justify-center bg-purple-600 px-5 py-3 font-semibold text-white transition-transform hover:translate-y-0.5"
+          >
+            Start Planning Poker
+          </Link>
+        </section>
 
         <FolderList
           boards={previousBoards}
