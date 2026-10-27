@@ -311,6 +311,12 @@ export const updatePhase = mutation({
 
       if (!hasActionsSection) {
         const maxOrder = sections.reduce((max, s) => Math.max(max, s.order), -1)
+        // Use the current bounds: sections may have been moved or resized.
+        const bottom = sections.reduce((max, section) => Math.max(
+          max,
+          (section.y ?? Math.floor(section.order / 2) * (DEFAULT_SECTION_HEIGHT + SECTION_GAP)) +
+            (section.height ?? DEFAULT_SECTION_HEIGHT)
+        ), -SECTION_GAP)
         await ctx.db.insert('sections', {
           boardId,
           name: 'Action items',
@@ -318,8 +324,8 @@ export const updatePhase = mutation({
           order: maxOrder + 1,
           width: DEFAULT_SECTION_WIDTH,
           height: DEFAULT_SECTION_HEIGHT,
-          x: ((maxOrder + 1) % 2) * (DEFAULT_SECTION_WIDTH + SECTION_GAP),
-          y: Math.floor((maxOrder + 1) / 2) * (DEFAULT_SECTION_HEIGHT + SECTION_GAP),
+          x: 0,
+          y: bottom + SECTION_GAP,
         })
       }
     }
