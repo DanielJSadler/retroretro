@@ -30,6 +30,30 @@
 .animate-vote-flip { animation: vote-flip 0.6s ease-in-out; }
 .animate-bar-grow { animation: bar-grow 0.8s ease-out forwards; }
 
+.revealed-vote {
+  z-index: var(--stack-order);
+  transform-origin: bottom center;
+  transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1), filter 240ms ease;
+}
+
+.revealed-vote:hover,
+.revealed-vote:focus {
+  z-index: 1000;
+  transform: translate(16px, -32px) rotate(-6deg) scale(1.08);
+  filter: drop-shadow(0 12px 14px rgb(0 0 0 / 0.5));
+}
+
+.revealed-vote:focus-visible {
+  outline: 2px solid #a5b4fc;
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .revealed-vote { transition: none; }
+  .revealed-vote:hover,
+  .revealed-vote:focus { transform: none; }
+}
+
 @keyframes confetti-fall {
   0% { opacity: 0; transform: translateY(-20vh) rotate(0deg) scale(0.8); }
   10% { opacity: 1; }

@@ -2,6 +2,7 @@ import { VoteCard } from "../molecules/VoteCard";
 import { AverageDisplay } from "../molecules/AverageDisplay";
 import { ResultsChart } from "./ResultsChart";
 import type { PokerDeck } from "../../lib/decks";
+import type { CSSProperties } from "react";
 
 interface Vote {
   playerId: string;
@@ -38,12 +39,18 @@ export function RevealPanel({ votes, outliers, deck }: RevealPanelProps) {
                 {group.map((vote, index) => (
                   <div
                     key={vote.playerId}
-                    className="relative"
+                    className="revealed-vote group relative rounded-2xl outline-none"
+                    tabIndex={0}
+                    role="group"
+                    aria-label={`${vote.playerName} voted ${vote.value}`}
                     style={{
-                      zIndex: index + 1,
+                      '--stack-order': index + 1,
                       marginTop: index === 0 ? 0 : -96,
-                    }}
+                    } as CSSProperties}
                   >
+                    <span className="pointer-events-none absolute inset-x-0 -top-9 z-10 rounded-lg bg-indigo-600 px-2 py-1 text-center text-xs font-semibold text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
+                      {vote.playerName}
+                    </span>
                     <VoteCard
                       value={vote.value}
                       isSelected={false}
@@ -51,7 +58,7 @@ export function RevealPanel({ votes, outliers, deck }: RevealPanelProps) {
                       disabled
                       className={`w-28 ${outliers.has(vote.playerId) ? "border-2 border-amber-500 bg-amber-950/30" : ""}`}
                     />
-                    <div className="pointer-events-none absolute inset-x-0 bottom-2 text-center text-[10px] text-slate-400">
+                    <div className="pointer-events-none absolute inset-x-1 bottom-2 break-words text-center text-xs font-semibold text-slate-200">
                       {vote.playerName}
                     </div>
                   </div>
