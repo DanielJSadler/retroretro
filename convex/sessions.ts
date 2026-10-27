@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { deckSelection, resolveDeckSelection } from "./pokerDecks";
 import { PRESET_DECKS } from "../src/features/planning-poker/lib/decks";
+import { cancelAutoReveal, syncAutoReveal } from "./pokerVotes";
 
 function generateRoomCode(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -71,6 +72,7 @@ export const changeDeck = mutation({
     }
 
     const deck = await resolveDeckSelection(ctx, args.deckSelection);
+    await cancelAutoReveal(ctx, session);
     if (session.status === "revealed") {
       const players = await ctx.db
         .query("players")
@@ -120,6 +122,7 @@ export const joinSession = mutation({
       isConnected: true,
       disambiguator,
     });
+    await syncAutoReveal(ctx, session._id);
 
     return { sessionId: session._id, playerId };
   },
@@ -149,6 +152,7 @@ export const resetRound = mutation({
     const session = await ctx.db.get(args.sessionId);
     if (!session) throw new Error("Session not found");
 
+    await cancelAutoReveal(ctx, session);
     await ctx.db.patch(args.sessionId, {
       status: "voting",
       round: session.round + 1,
@@ -170,6 +174,9 @@ export const resetRound = mutation({
 export const updatePlayerStatus = mutation({
   args: { playerId: v.id("players"), isConnected: v.boolean() },
   handler: async (ctx, args) => {
+    const player = await ctx.db.get(args.playerId);
+    if (!player || player.isConnected === args.isConnected) return;
     await ctx.db.patch(args.playerId, { isConnected: args.isConnected });
+    await syncAutoReveal(ctx, player.sessionId);
   },
 });

@@ -122,6 +122,8 @@ export default defineSchema({
     round: v.number(),
     moderatorId: v.string(),
     createdAt: v.number(),
+    autoRevealAt: v.optional(v.number()),
+    autoRevealJobId: v.optional(v.id('_scheduled_functions')),
     deck: v.optional(v.object({
       name: v.string(),
       cards: v.array(v.string()),

@@ -15,6 +15,7 @@ import { VoteCardsPanel } from "../components/organisms/VoteCardsPanel";
 import { RevealPanel } from "../components/organisms/RevealPanel";
 import { SessionControls } from "../components/organisms/SessionControls";
 import { PiPView } from "../components/organisms/PiPView";
+import { AutoRevealCountdown } from "../components/organisms/AutoRevealCountdown";
 import { JoinForm } from "../components/molecules/JoinForm";
 import { Spinner } from "../components/atoms/Spinner";
 import { ConfettiBurst } from "../components/atoms/ConfettiBurst";
@@ -389,11 +390,13 @@ export default function PlanningPokerRoom() {
           canChangeDeck={canChangeDeck}
           deckPicker={deckPicker}
           error={actionError}
+          autoRevealAt={session.autoRevealAt}
         />,
         pipWindow.document.body,
       )}
       <ConfettiBurst active={shouldCelebrate} />
       <div className="flex flex-col gap-6">
+        <AutoRevealCountdown deadline={session.status === 'voting' ? session.autoRevealAt : undefined} />
         <SessionControls
           isModerator={isModerator(session.moderatorId)}
           status={session.status}

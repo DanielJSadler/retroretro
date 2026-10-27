@@ -5,6 +5,7 @@ import { ResultsChart } from './ResultsChart';
 import { VoteCardsPanel } from './VoteCardsPanel';
 import { Button } from '../atoms/Button';
 import { RoomHeader } from './RoomHeader';
+import { AutoRevealCountdown } from './AutoRevealCountdown';
 import type { Player } from './TableSeats';
 import type { PokerDeck } from '../../lib/decks';
 
@@ -32,12 +33,13 @@ interface PiPViewProps {
   canChangeDeck: boolean;
   deckPicker: ReactNode;
   error: string | null;
+  autoRevealAt?: number;
 }
 
 export function PiPView({
   roomCode, round, deck, status, selectedVote, players, currentPlayerId,
   votes, outliers, isModerator, onVote, onReveal, onReset,
-  onChangeDeck, canChangeDeck, deckPicker, error,
+  onChangeDeck, canChangeDeck, deckPicker, error, autoRevealAt,
 }: PiPViewProps) {
   const activePlayers = players.filter((player) => player.isConnected);
   const voteCount = activePlayers.filter((player) => player.hasVoted).length;
@@ -48,6 +50,7 @@ export function PiPView({
     <div id="planning-poker" className="dark min-h-screen min-w-0 bg-slate-950 p-3 text-slate-100">
       <div className="mx-auto flex w-full min-w-0 max-w-lg flex-col gap-3">
         <RoomHeader roomCode={roomCode} deckName={deck.name} status={status} />
+        <AutoRevealCountdown deadline={status === 'voting' ? autoRevealAt : undefined} />
         <section aria-label="Players and voting progress" className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/80 p-3">
           <div className="mb-2 flex flex-wrap justify-between gap-2 text-xs text-slate-300" aria-live="polite">
             <span>Round {round} ? {activePlayers.length} online</span>

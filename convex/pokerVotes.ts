@@ -1,6 +1,50 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query, type MutationCtx } from "./_generated/server";
+import { internal } from "./_generated/api";
+import type { Doc, Id } from "./_generated/dataModel";
 import { getRoomDeck, voteLabel } from "../src/features/planning-poker/lib/decks";
+
+export async function cancelAutoReveal(ctx: MutationCtx, session: Doc<"sessions">): Promise<void> {
+  if (session.autoRevealJobId) await ctx.scheduler.cancel(session.autoRevealJobId);
+  if (session.autoRevealAt !== undefined || session.autoRevealJobId) {
+    await ctx.db.patch(session._id, { autoRevealAt: undefined, autoRevealJobId: undefined });
+  }
+}
+
+export async function syncAutoReveal(ctx: MutationCtx, sessionId: Id<"sessions">): Promise<void> {
+  const session = await ctx.db.get(sessionId);
+  if (!session) return;
+  const players = await ctx.db.query("players")
+    .withIndex("by_sessionId", q => q.eq("sessionId", sessionId)).collect();
+  const connected = players.filter(player => player.isConnected);
+  if (session.status !== "voting" || connected.length === 0 || connected.some(player => !player.hasVoted)) {
+    await cancelAutoReveal(ctx, session);
+    return;
+  }
+  // Keep the same deadline if a player changes their chosen card.
+  if (session.autoRevealAt !== undefined) return;
+  const deadline = Date.now() + 3000;
+  const jobId = await ctx.scheduler.runAt(deadline, internal.pokerVotes.autoReveal, {
+    sessionId, round: session.round, deadline,
+  });
+  await ctx.db.patch(sessionId, { autoRevealAt: deadline, autoRevealJobId: jobId });
+}
+
+export const autoReveal = internalMutation({
+  args: { sessionId: v.id("sessions"), round: v.number(), deadline: v.number() },
+  handler: async (ctx, { sessionId, round, deadline }): Promise<void> => {
+    const session = await ctx.db.get(sessionId);
+    if (!session || session.status !== "voting" || session.round !== round || session.autoRevealAt !== deadline) return;
+    const players = await ctx.db.query("players")
+      .withIndex("by_sessionId", q => q.eq("sessionId", sessionId)).collect();
+    const connected = players.filter(player => player.isConnected);
+    await ctx.db.patch(sessionId, {
+      ...(connected.length > 0 && connected.every(player => player.hasVoted) ? { status: "revealed" as const } : {}),
+      autoRevealAt: undefined,
+      autoRevealJobId: undefined,
+    });
+  },
+});
 
 export const submitVote = mutation({
   args: {
@@ -36,6 +80,7 @@ export const submitVote = mutation({
       if (voteLabel(existing.value) === voteLabel(args.value)) {
         await ctx.db.delete(existing._id);
         await ctx.db.patch(args.playerId, { hasVoted: false });
+        await syncAutoReveal(ctx, args.sessionId);
         return { success: true };
       }
       await ctx.db.patch(existing._id, { value: args.value });
@@ -50,6 +95,7 @@ export const submitVote = mutation({
     }
 
     await ctx.db.patch(args.playerId, { hasVoted: true });
+    await syncAutoReveal(ctx, args.sessionId);
     return { success: true };
   },
 });
@@ -60,6 +106,7 @@ export const revealVotes = mutation({
     const session = await ctx.db.get(args.sessionId);
     if (!session) throw new Error("Session not found");
 
+    await cancelAutoReveal(ctx, session);
     await ctx.db.patch(args.sessionId, { status: "revealed" });
     return { success: true };
   },

@@ -6,3 +6,4 @@
 [x] - PiP contains compact player status, voting progress, all results, outliers, and deck controls; card selectors have responsive spacing without clipping.
 [x] - Responsive mobile layouts across home, authentication, folders, poker, and retro boards, with stacked notes and touch controls.
 [x] - New and existing notes share the auto-growing edit view, and private placeholders show live dimensions without exposing text before reveal.
+[x] - Shared three-second automatic poker reveal when all connected players vote, with countdown cancellation for unvotes and unready arrivals.
