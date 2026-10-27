@@ -14,10 +14,11 @@ export function StandardModeProvider({ children }: { children: React.ReactNode }
 
   // Initialize from local storage if available
   useEffect(() => {
-    const stored = localStorage.getItem('retro-standard-mode');
-    if (stored) {
-      setIsStandardMode(stored === 'true');
-    }
+    const frame = requestAnimationFrame(() => {
+      const stored = localStorage.getItem('retro-standard-mode');
+      if (stored) setIsStandardMode(stored === 'true');
+    });
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   const toggleStandardMode = () => {

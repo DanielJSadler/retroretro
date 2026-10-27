@@ -29,7 +29,7 @@ export default function Timer({
 
   useEffect(() => {
     if (startedAt && !isPaused) {
-      setHasFinished(false);
+      const frame = requestAnimationFrame(() => setHasFinished(false));
       const interval = setInterval(() => {
         const elapsed = Date.now() - startedAt;
         const remaining = Math.max(0, duration - elapsed);
@@ -66,12 +66,13 @@ export default function Timer({
         }
       }, 100);
 
-      return () => clearInterval(interval);
+      return () => { cancelAnimationFrame(frame); clearInterval(interval); };
     } else if (isPaused && serverRemainingTime !== undefined) {
-      setRemainingTime(serverRemainingTime);
+      const frame = requestAnimationFrame(() => setRemainingTime(serverRemainingTime));
+      return () => cancelAnimationFrame(frame);
     } else if (!startedAt) {
-      setRemainingTime(0);
-      setHasFinished(false);
+      const frame = requestAnimationFrame(() => { setRemainingTime(0); setHasFinished(false); });
+      return () => cancelAnimationFrame(frame);
     }
   }, [startedAt, duration, isPaused, serverRemainingTime, onFinish]);
 

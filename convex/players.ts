@@ -6,7 +6,7 @@ export const getPlayers = query({
   handler: async (ctx, args) => {
     const players = await ctx.db
       .query("players")
-      .withIndex("by_sessionId", (q: any) => q.eq("sessionId", args.sessionId))
+      .withIndex("by_sessionId", (q) => q.eq("sessionId", args.sessionId))
       .collect();
 
     return players.sort((a, b) => (a._creationTime < b._creationTime ? -1 : 1));

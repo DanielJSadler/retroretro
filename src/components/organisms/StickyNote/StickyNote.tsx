@@ -84,9 +84,11 @@ export default function StickyNote({
     }
   }, [isEditing, editContent]);
 
-  useEffect(() => {
+  const [previousContent, setPreviousContent] = useState(note.content);
+  if (previousContent !== note.content) {
+    setPreviousContent(note.content);
     setEditContent(note.content);
-  }, [note.content]);
+  }
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (isEditing || isReference || isDragPreview) return;

@@ -11,24 +11,23 @@ export function ConfettiBurst({ active }: ConfettiBurstProps) {
 
   useEffect(() => {
     if (!active) {
-      setPieces([]);
       return;
     }
 
-    setPieces(
+    const frame = requestAnimationFrame(() => setPieces(
       Array.from({ length: 42 }, (_, id) => ({
         id,
         left: Math.random() * 100,
         color: COLORS[Math.floor(Math.random() * COLORS.length)],
         delay: Math.random() * 0.35,
       }))
-    );
+    ));
 
     const timer = window.setTimeout(() => setPieces([]), 2400);
-    return () => window.clearTimeout(timer);
+    return () => { cancelAnimationFrame(frame); window.clearTimeout(timer); };
   }, [active]);
 
-  if (pieces.length === 0) return null;
+  if (!active || pieces.length === 0) return null;
 
   return (
     <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">

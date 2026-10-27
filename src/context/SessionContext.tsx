@@ -49,12 +49,12 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (currentUser && sessionId) {
       // Initial sync
-      syncSession();
+      const initialSync = setTimeout(syncSession, 0);
 
       // Poll for updates every 2 seconds
       const interval = setInterval(syncSession, 2000);
 
-      return () => clearInterval(interval);
+      return () => { clearTimeout(initialSync); clearInterval(interval); };
     }
   }, [currentUser, sessionId, syncSession]);
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Input } from "../atoms/Input";
 import { Button } from "../atoms/Button";
 
@@ -15,15 +15,11 @@ export function JoinForm({ onSubmit, initialName = "", buttonText = "Join", isLo
   const [error, setError] = useState("");
   const [hasEditedName, setHasEditedName] = useState(false);
 
-  useEffect(() => {
-    if (!hasEditedName && initialName.trim()) {
-      setName(initialName);
-    }
-  }, [hasEditedName, initialName]);
+  const displayName = hasEditedName ? name : initialName;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmed = name.trim();
+    const trimmed = displayName.trim();
     if (!trimmed) {
       setError("Please enter your name");
       return;
@@ -37,7 +33,7 @@ export function JoinForm({ onSubmit, initialName = "", buttonText = "Join", isLo
       <Input
         label="Your name"
         placeholder="Enter your name"
-        value={name}
+        value={displayName}
         onChange={(e) => {
           setHasEditedName(true);
           setName(e.target.value);

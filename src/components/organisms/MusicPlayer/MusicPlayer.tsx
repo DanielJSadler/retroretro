@@ -31,12 +31,7 @@ export default function MusicPlayer({
   const nextMutation = useMutation(api.music.next);
 
   // Set default selected song when songs load
-  useEffect(() => {
-    if (songs && songs.length > 0 && !selectedSong) {
-      setSelectedSong(songs[0]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [songs]); // Only run when songs load, not when selectedSong changes (to avoid loop/re-selection)
+  if (songs?.length && !selectedSong) setSelectedSong(songs[0]);
 
   const playAudio = async () => {
     try {

@@ -81,8 +81,8 @@ export default function ActionConnectorLayer({
   useLayoutEffect(() => {
     const board = boardRef.current
     if (!board || links.length === 0) {
-      setConnectors([])
-      return
+      const frame = requestAnimationFrame(() => setConnectors([]))
+      return () => cancelAnimationFrame(frame)
     }
 
     let frameId = 0

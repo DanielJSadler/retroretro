@@ -95,7 +95,7 @@ export const joinSession = mutation({
   handler: async (ctx, args) => {
     const session = await ctx.db
       .query("sessions")
-      .withIndex("by_roomCode", (q: any) => q.eq("roomCode", args.roomCode.toUpperCase()))
+      .withIndex("by_roomCode", (q) => q.eq("roomCode", args.roomCode.toUpperCase()))
       .unique();
 
     if (!session) {
@@ -105,7 +105,7 @@ export const joinSession = mutation({
     const trimmedName = args.playerName.trim();
     const existingPlayers = await ctx.db
       .query("players")
-      .withIndex("by_sessionId", (q: any) => q.eq("sessionId", session._id))
+      .withIndex("by_sessionId", (q) => q.eq("sessionId", session._id))
       .collect();
 
     const sameNameCount = existingPlayers.filter((player) => player.name === trimmedName).length;
@@ -130,7 +130,7 @@ export const getSession = query({
   handler: async (ctx, args) => {
     const session = await ctx.db
       .query("sessions")
-      .withIndex("by_roomCode", (q: any) => q.eq("roomCode", args.roomCode.toUpperCase()))
+      .withIndex("by_roomCode", (q) => q.eq("roomCode", args.roomCode.toUpperCase()))
       .unique();
     return session;
   },
@@ -156,7 +156,7 @@ export const resetRound = mutation({
 
     const players = await ctx.db
       .query("players")
-      .withIndex("by_sessionId", (q: any) => q.eq("sessionId", args.sessionId))
+      .withIndex("by_sessionId", (q) => q.eq("sessionId", args.sessionId))
       .collect();
 
     for (const player of players) {
@@ -169,7 +169,7 @@ export const resetRound = mutation({
 
 export const updatePlayerStatus = mutation({
   args: { playerId: v.id("players"), isConnected: v.boolean() },
-  handler: async (ctx: any, args: any) => {
+  handler: async (ctx, args) => {
     await ctx.db.patch(args.playerId, { isConnected: args.isConnected });
   },
 });

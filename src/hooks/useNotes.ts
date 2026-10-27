@@ -3,7 +3,7 @@ import { api } from '../../convex/_generated/api'
 import { Id } from '../../convex/_generated/dataModel'
 import { Note, NoteColor, Section, Session } from '@/types'
 
-export function useNotes(boardId: string, session: Session | null, currentUser: any) {
+export function useNotes(boardId: string, session: Session | null, currentUser: { id: string } | null | undefined) {
   const createNote = useMutation(api.notes.create)
   const createDraft = useMutation(api.notes.createDraft)
   const updateDraft = useMutation(api.notes.updateDraft)

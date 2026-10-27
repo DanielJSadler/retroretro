@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { NoteColor, Section } from '@/types';
 
 interface NoteCreatorProps {
@@ -17,25 +17,16 @@ export default function NoteCreator({
     sections[0]?.id || '',
   );
 
-  // Update selected section if sections change
-  useEffect(() => {
-    if (
-      sections.length > 0 &&
-      !sections.find((s) => s.id === selectedSectionId)
-    ) {
-      setSelectedSectionId(sections[0].id);
-    }
-  }, [sections, selectedSectionId]);
-
-  const selectedSection = sections.find((s) => s.id === selectedSectionId);
+  const selectedSection = sections.find((s) => s.id === selectedSectionId) ?? sections[0];
+  const effectiveSectionId = selectedSection?.id ?? '';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (content.trim() && selectedSectionId) {
+    if (content.trim() && effectiveSectionId) {
       onCreateNote(
         content,
         selectedSection?.color || 'yellow',
-        selectedSectionId,
+        effectiveSectionId,
       );
       setContent('');
     }
@@ -52,7 +43,7 @@ export default function NoteCreator({
             Section
           </label>
           <select
-            value={selectedSectionId}
+            value={effectiveSectionId}
             onChange={(e) => setSelectedSectionId(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
           >

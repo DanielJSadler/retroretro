@@ -119,11 +119,11 @@ export default function BoardPage() {
     requestAnimationFrame(() => mainEl.scrollTo({ left: 0, top: 0 }))
   }, [])
 
-  useEffect(() => {
-    if (session?.phase === 'reveal') {
-      setTimerExpired(false)
-    }
-  }, [session?.phase])
+  const [previousPhase, setPreviousPhase] = useState(session?.phase)
+  if (previousPhase !== session?.phase) {
+    setPreviousPhase(session?.phase)
+    if (session?.phase === 'reveal') setTimerExpired(false)
+  }
 
   const handleNoteDragStart = (note: Note, x: number, y: number) => {
     setDraggingNote({ note, x, y })
@@ -338,7 +338,7 @@ export default function BoardPage() {
 
           <CursorOverlay
             cursors={getCursorPositions}
-            currentUserId={(currentUser as any)?._id || (currentUser as any)?.id}
+            currentUserId={currentUser?.id}
           />
 
           {movingSection && sectionGhostPosition && <SectionDropGhost section={movingSection} position={sectionGhostPosition} />}

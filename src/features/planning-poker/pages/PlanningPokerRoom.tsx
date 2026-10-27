@@ -155,7 +155,7 @@ export default function PlanningPokerRoom() {
   };
 
   const handleOpenPiP = async () => {
-    const pictureInPicture = (window as Window & { documentPictureInPicture?: any })
+    const pictureInPicture = (window as Window & { documentPictureInPicture?: { requestWindow: (options: { width: number; height: number }) => Promise<Window> } })
       .documentPictureInPicture;
     if (!pictureInPicture) return;
     if (pipWindowRef.current && !pipWindowRef.current.closed) return;
@@ -195,7 +195,7 @@ export default function PlanningPokerRoom() {
       // Picture-in-Picture can be unsupported or blocked by the browser.
     }
   };
-  openPiPRef.current = handleOpenPiP;
+  useEffect(() => { openPiPRef.current = handleOpenPiP; });
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -273,11 +273,14 @@ export default function PlanningPokerRoom() {
   }, [currentPlayer, player?.playerId, updatePlayerStatus]);
 
   useEffect(() => {
+    const frame = requestAnimationFrame(() => {
     if (currentVote?.value !== undefined) {
       setSelectedVote(voteLabel(currentVote.value));
     } else if (session?.status === "voting") {
       setSelectedVote(null);
     }
+    });
+    return () => cancelAnimationFrame(frame);
   }, [currentVote, session?.status]);
 
   const outlierIds = useMemo(() => {

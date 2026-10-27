@@ -101,11 +101,14 @@ export default function BoardSection({
   const canCreateInSection = sessionPhase !== 'finished' && (sessionPhase !== 'discussion' || isActions)
 
   useEffect(() => {
-    if (!resizeStart.current) {
-      const nextSize = { width: section.width, height: section.height }
-      resizeLatest.current = nextSize
-      setSectionSize(nextSize)
-    }
+    const frame = requestAnimationFrame(() => {
+      if (!resizeStart.current) {
+        const nextSize = { width: section.width, height: section.height }
+        resizeLatest.current = nextSize
+        setSectionSize(nextSize)
+      }
+    })
+    return () => cancelAnimationFrame(frame)
   }, [section.width, section.height])
 
   useEffect(() => {

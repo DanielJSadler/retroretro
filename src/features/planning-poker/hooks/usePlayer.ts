@@ -15,6 +15,7 @@ export function usePlayer() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const frame = requestAnimationFrame(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (raw) {
@@ -36,6 +37,8 @@ export function usePlayer() {
     } finally {
       setIsLoading(false);
     }
+    });
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   const savePlayer = useCallback((identity: PlayerIdentity) => {
