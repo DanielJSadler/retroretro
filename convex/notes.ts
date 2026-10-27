@@ -87,6 +87,11 @@ export const getByBoard = query({
           sourceNoteId: note.sourceNoteId,
           createdAt: note._creationTime,
           isDraft: note.isDraft ?? false,
+          // Share only geometry while writing. Private text stays on the server.
+          size: note.size ?? {
+            width: 300,
+            height: Math.min(20000, Math.max(110, 72 + note.content.split('\n').reduce((rows, line) => rows + Math.max(1, Math.ceil(line.length / 24)), 0) * 24)),
+          },
           votes:
             board?.phase === 'voting'
               ? votes.filter(v => v.userId === userId).map(v => v.userId)
@@ -225,6 +230,7 @@ export const update = mutation({
     ),
     positionX: v.optional(v.number()),
     positionY: v.optional(v.number()),
+    size: v.optional(v.object({ width: v.number(), height: v.number() })),
   },
   handler: async (ctx, { noteId, ...updates }) => {
     const userId = await auth.getUserId(ctx)
@@ -247,6 +253,13 @@ export const update = mutation({
     if (updates.color !== undefined) patchData.color = updates.color
     if (updates.positionX !== undefined) patchData.positionX = updates.positionX
     if (updates.positionY !== undefined) patchData.positionY = updates.positionY
+    if (updates.size) {
+      if (!Number.isFinite(updates.size.width) || !Number.isFinite(updates.size.height)) throw new Error('Invalid note size')
+      patchData.size = {
+        width: Math.max(100, Math.min(600, Math.round(updates.size.width))),
+        height: Math.max(60, Math.min(20000, Math.round(updates.size.height))),
+      }
+    }
 
     await ctx.db.patch(noteId, patchData)
   },

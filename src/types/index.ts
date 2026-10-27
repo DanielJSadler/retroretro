@@ -24,6 +24,7 @@ export interface Note {
   group?: string
   createdAt: number
   isDraft: boolean
+  size?: { width: number; height: number }
   votes: string[] // Array of participant names who voted for this note
 }
 

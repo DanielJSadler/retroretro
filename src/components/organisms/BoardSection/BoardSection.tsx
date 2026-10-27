@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Note, NoteColor, Phase, Section } from '@/types'
 import StickyNote from '@/components/organisms/StickyNote'
+import NoteEditor from '@/components/molecules/NoteEditor/NoteEditor'
+import { useNoteSize } from '@/hooks/useNoteSize'
 
 const sectionColorClasses: Record<NoteColor, string> = {
   yellow: 'bg-yellow-100 border-yellow-300',
@@ -96,6 +98,8 @@ export default function BoardSection({
   const [sectionSize, setSectionSize] = useState({ width: section.width, height: section.height })
   const resizeStart = useRef<{ x: number; y: number; width: number; height: number } | null>(null)
   const resizeLatest = useRef(sectionSize)
+  const draftEditorRef = useRef<HTMLDivElement>(null)
+  useNoteSize(draftEditorRef, draftId ? size => { void onUpdateNote(draftId, { size }) } : undefined)
   const draftRequestId = useRef(0)
   const contentRef = useRef('')
   const draftUpdateTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -370,9 +374,11 @@ export default function BoardSection({
             >
               {isGhost ? (
                 <div
-                  className="z-20 w-40 p-3 rounded-lg shadow-md bg-gray-200 border-2 border-dashed border-gray-400 opacity-50"
+                  className="z-20 p-4 rounded-lg shadow-md bg-gray-200 border-2 border-dashed border-gray-400 opacity-50"
                   style={{
                     position: 'absolute',
+                    width: note.size?.width ?? 300,
+                    height: note.size?.height ?? 110,
                     left: `${note.position.x}%`,
                     top: `${note.position.y}%`,
                   }}
@@ -431,47 +437,25 @@ export default function BoardSection({
 
         {canCreateInSection && creatingInSection === section.id && (
           <div
+            ref={draftEditorRef}
             data-note-editor
-            className="absolute bg-white rounded-lg shadow-xl p-3 z-50 w-48"
+            className="absolute min-w-[200px] max-w-[300px] w-[300px] rounded-lg shadow-lg p-4 z-50 border"
             style={{
+              backgroundColor: { yellow: '#fef08a', blue: '#bfdbfe', green: '#bbf7d0', red: '#fecaca', pink: '#fbcfe8' }[section.color],
               left: `${newNotePosition?.x ?? 20}%`,
               top: `${newNotePosition?.y ?? 20}%`,
             }}
             onClick={e => e.stopPropagation()}
           >
-            <textarea
+            <div className="mb-2 border-b border-black/5 pb-1 text-xs font-bold uppercase tracking-wider text-gray-700">Your note</div>
+            <NoteEditor
               value={newNoteContent}
-              onChange={e => handleDraftContentChange(e.target.value)}
-              placeholder="Type your note..."
-              className="w-full p-2 text-sm border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows={3}
-              autoFocus
-              onKeyDown={e => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
-                  handleCreateNote()
-                }
-                if (e.key === 'Escape') {
-                  void handleCancelDraft()
-                }
-              }}
+              onChange={handleDraftContentChange}
+              onSave={() => { void handleCreateNote() }}
+              onCancel={() => { void handleCancelDraft() }}
+              busy={isCreatingDraft || isFinalizingDraft}
+              saveLabel={isCreatingDraft ? 'Starting...' : isFinalizingDraft ? 'Saving...' : 'Save'}
             />
-            <div className="flex gap-2 mt-2">
-              <button
-                onClick={handleCreateNote}
-                disabled={isCreatingDraft || isFinalizingDraft}
-                className="flex-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-              >
-                {isCreatingDraft ? 'Starting...' : isFinalizingDraft ? 'Saving...' : 'Add (Enter)'}
-              </button>
-              <button
-                onClick={() => void handleCancelDraft()}
-                disabled={isFinalizingDraft}
-                className="flex-1 px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300"
-              >
-                Cancel (Esc)
-              </button>
-            </div>
           </div>
         )}
 

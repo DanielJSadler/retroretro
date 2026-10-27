@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Note, NoteColor, Phase } from '@/types';
+import NoteEditor from '@/components/molecules/NoteEditor/NoteEditor';
+import { useNoteSize } from '@/hooks/useNoteSize';
 
 interface StickyNoteProps {
   note: Note;
@@ -68,21 +70,9 @@ export default function StickyNote({
   } | null>(null);
   
   const noteRef = useRef<HTMLDivElement>(null);
-  const teaxtareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Auto-resize function
-  const autoResize = () => {
-    if (teaxtareaRef.current) {
-      teaxtareaRef.current.style.height = 'auto';
-      teaxtareaRef.current.style.height = teaxtareaRef.current.scrollHeight + 'px';
-    }
-  };
-
-  useLayoutEffect(() => {
-    if (isEditing) {
-      autoResize();
-    }
-  }, [isEditing, editContent]);
+  useNoteSize(noteRef, canEdit && currentPhase === 'writing' && !isReference && !isDragPreview
+    ? size => { if (note.size?.width !== size.width || note.size?.height !== size.height) onUpdate(note.id, { size }); }
+    : undefined);
 
   const [previousContent, setPreviousContent] = useState(note.content);
   if (previousContent !== note.content) {
@@ -157,17 +147,6 @@ export default function StickyNote({
   const handleSave = () => {
     onUpdate(note.id, { content: editContent });
     setIsEditing(false);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSave();
-    }
-    if (e.key === 'Escape') {
-      setEditContent(note.content);
-      setIsEditing(false);
-    }
   };
 
   if (!canSee) {
@@ -263,40 +242,12 @@ export default function StickyNote({
 
       {/* Content Area */}
       {isEditing ? (
-        <div className="flex flex-col gap-2 relative">
-          <textarea
-            ref={teaxtareaRef}
-            value={editContent}
-            onChange={(e) => setEditContent(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="w-full min-h-[80px] p-2 text-base md:text-lg bg-white/40 border border-black/10 rounded-md focus:outline-none focus:ring-2 focus:ring-black/20 focus:bg-white/60 resize-none overflow-hidden leading-snug placeholder-gray-500/50"
-            rows={1}
-            placeholder="Write your thought..."
-            onClick={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            autoFocus
-          />
-          <div className="flex flex-wrap gap-2 justify-end">
-             <span className="text-[10px] text-gray-500 self-center mr-auto">
-               Enter to save, Shift+Enter for new line
-             </span>
-            <button
-              onClick={() => {
-                 setEditContent(note.content);
-                 setIsEditing(false);
-              }}
-              className="px-3 py-1 bg-black/10 text-gray-800 text-xs font-bold rounded hover:bg-black/20 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              className="px-3 py-1 bg-black/80 text-white text-xs font-bold rounded hover:bg-black transition-colors shadow-sm"
-            >
-              Save
-            </button>
-          </div>
-        </div>
+        <NoteEditor
+          value={editContent}
+          onChange={setEditContent}
+          onSave={handleSave}
+          onCancel={() => { setEditContent(note.content); setIsEditing(false); }}
+        />
       ) : (
         <div 
             className="text-base md:text-lg text-gray-900 whitespace-pre-wrap break-words leading-snug font-medium cursor-text"

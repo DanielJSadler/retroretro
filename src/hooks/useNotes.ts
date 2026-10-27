@@ -76,6 +76,7 @@ export function useNotes(boardId: string, session: Session | null, currentUser: 
         positionY?: number
         sectionId?: Id<'sections'>
         color?: NoteColor
+        size?: { width: number; height: number }
       } = { noteId: id as Id<'notes'> }
 
       if (updates.content !== undefined) updateData.content = updates.content
@@ -85,6 +86,7 @@ export function useNotes(boardId: string, session: Session | null, currentUser: 
       }
       if (updates.sectionId) updateData.sectionId = updates.sectionId as Id<'sections'>
       if (updates.color) updateData.color = updates.color
+      if (updates.size) updateData.size = updates.size
 
       await updateNote(updateData)
     } catch (error) {

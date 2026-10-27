@@ -62,6 +62,7 @@ export default defineSchema({
     sourceNoteId: v.optional(v.id('notes')),
     isDraft: v.optional(v.boolean()),
     draftUpdatedAt: v.optional(v.number()),
+    size: v.optional(v.object({ width: v.number(), height: v.number() })),
   })
     .index('by_board', ['boardId'])
     .index('by_section', ['sectionId']),

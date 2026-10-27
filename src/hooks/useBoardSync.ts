@@ -78,6 +78,7 @@ export function useBoardSync(boardId: string) {
               sourceNoteId?: Id<'notes'>
               createdAt: number
               isDraft: boolean
+              size?: { width: number; height: number }
               votes: Id<'users'>[]
             }) => ({
               ...n,
