@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface ConfettiBurstProps {
   active: boolean;
@@ -7,6 +7,7 @@ interface ConfettiBurstProps {
 const COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ec4899", "#06b6d4"];
 
 export function ConfettiBurst({ active }: ConfettiBurstProps) {
+  const container = useRef<HTMLDivElement>(null);
   const [pieces, setPieces] = useState<Array<{ id: number; left: number; color: string; delay: number }>>([]);
 
   useEffect(() => {
@@ -14,7 +15,8 @@ export function ConfettiBurst({ active }: ConfettiBurstProps) {
       return;
     }
 
-    const frame = requestAnimationFrame(() => setPieces(
+    const host = container.current?.ownerDocument.defaultView ?? window;
+    const frame = host.requestAnimationFrame(() => setPieces(
       Array.from({ length: 42 }, (_, id) => ({
         id,
         left: Math.random() * 100,
@@ -23,14 +25,14 @@ export function ConfettiBurst({ active }: ConfettiBurstProps) {
       }))
     ));
 
-    const timer = window.setTimeout(() => setPieces([]), 2400);
-    return () => { cancelAnimationFrame(frame); window.clearTimeout(timer); };
+    const timer = host.setTimeout(() => setPieces([]), 2400);
+    return () => { host.cancelAnimationFrame(frame); host.clearTimeout(timer); };
   }, [active]);
 
-  if (!active || pieces.length === 0) return null;
+  if (!active) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
+    <div ref={container} aria-hidden="true" className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
       {pieces.map((piece) => (
         <span
           key={piece.id}

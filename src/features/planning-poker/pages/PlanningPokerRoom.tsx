@@ -391,10 +391,11 @@ export default function PlanningPokerRoom() {
           deckPicker={deckPicker}
           error={actionError}
           autoRevealAt={session.autoRevealAt}
+          celebrate={shouldCelebrate}
         />,
         pipWindow.document.body,
       )}
-      <ConfettiBurst active={shouldCelebrate} />
+      <ConfettiBurst key={session.round} active={shouldCelebrate} />
       <div className="flex flex-col gap-6">
         <AutoRevealCountdown deadline={session.status === 'voting' ? session.autoRevealAt : undefined} />
         <SessionControls

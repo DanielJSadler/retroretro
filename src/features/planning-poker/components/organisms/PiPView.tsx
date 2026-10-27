@@ -6,6 +6,7 @@ import { VoteCardsPanel } from './VoteCardsPanel';
 import { Button } from '../atoms/Button';
 import { RoomHeader } from './RoomHeader';
 import { AutoRevealCountdown } from './AutoRevealCountdown';
+import { ConfettiBurst } from '../atoms/ConfettiBurst';
 import type { Player } from './TableSeats';
 import type { PokerDeck } from '../../lib/decks';
 
@@ -34,12 +35,13 @@ interface PiPViewProps {
   deckPicker: ReactNode;
   error: string | null;
   autoRevealAt?: number;
+  celebrate?: boolean;
 }
 
 export function PiPView({
   roomCode, round, deck, status, selectedVote, players, currentPlayerId,
   votes, outliers, isModerator, onVote, onReveal, onReset,
-  onChangeDeck, canChangeDeck, deckPicker, error, autoRevealAt,
+  onChangeDeck, canChangeDeck, deckPicker, error, autoRevealAt, celebrate = false,
 }: PiPViewProps) {
   const activePlayers = players.filter((player) => player.isConnected);
   const voteCount = activePlayers.filter((player) => player.hasVoted).length;
@@ -48,6 +50,7 @@ export function PiPView({
 
   return (
     <div id="planning-poker" className="dark min-h-screen min-w-0 bg-slate-950 p-3 text-slate-100">
+      <ConfettiBurst key={round} active={celebrate} />
       <div className="mx-auto flex w-full min-w-0 max-w-lg flex-col gap-3">
         <RoomHeader roomCode={roomCode} deckName={deck.name} status={status} />
         <AutoRevealCountdown deadline={status === 'voting' ? autoRevealAt : undefined} />
