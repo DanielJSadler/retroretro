@@ -12,10 +12,10 @@ interface RoomHeaderProps {
 
 export function RoomHeader({ roomCode, deckName, status, onReset }: RoomHeaderProps) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-xl p-4 shadow-sm bg-slate-800">
-      <div className="flex items-center gap-3">
-        <Users className="h-6 w-6 text-indigo-500" />
-        <div>
+    <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl p-3 shadow-sm bg-slate-800">
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+        <Users className="h-6 w-6 shrink-0 text-indigo-500" />
+        <div className="min-w-0 flex-1">
           <h1 className="text-lg font-bold text-slate-100">
             Planning Poker
           </h1>
@@ -24,7 +24,7 @@ export function RoomHeader({ roomCode, deckName, status, onReset }: RoomHeaderPr
             <Badge variant={status === 'voting' ? 'info' : 'success'} size="sm">
               {status === 'voting' ? 'Voting' : 'Revealed'}
             </Badge>
-            <span className="text-xs text-slate-400">{deckName}</span>
+            <span className="min-w-0 break-words text-xs text-slate-400">{deckName}</span>
           </div>
         </div>
         {onReset && (

@@ -47,7 +47,7 @@ function DeckEditor({
       />
       <div>
         <p className="mb-2 text-sm font-medium text-slate-300">Cards, in display order</p>
-        <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+        <div className="max-h-72 space-y-3 overflow-y-auto p-1">
           {regularCards.map((card, index) => (
             <div key={index} className="flex items-center gap-2">
               <input
@@ -164,7 +164,7 @@ export function DeckPicker({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="min-w-0 space-y-3 p-1">
       <label className="block text-sm font-medium text-slate-300" htmlFor="poker-deck-choice">Card deck</label>
       <select
         id="poker-deck-choice"
@@ -180,7 +180,7 @@ export function DeckPicker({
             onChange({ kind: "preset", presetId: key.slice(7) as PresetDeckId });
           }
         }}
-        className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-slate-100"
+        className="min-w-0 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 pr-8 text-slate-100"
       >
         {Object.entries(PRESET_DECKS).map(([id, deck]) => (
           <option key={id} value={`preset:${id}`}>{deck.name}</option>
@@ -191,10 +191,10 @@ export function DeckPicker({
         <option value="custom">Create a custom deck</option>
       </select>
       {value.kind === "preset" && (
-        <p className="text-sm text-slate-400">{PRESET_DECKS[value.presetId].cards.join(" · ")}</p>
+        <p className="break-words text-sm text-slate-400">{PRESET_DECKS[value.presetId].cards.join(" · ")}</p>
       )}
       {selectedSaved && (
-        <p className="text-sm text-slate-400">{selectedSaved.cards.join(" · ")}</p>
+        <p className="break-words text-sm text-slate-400">{selectedSaved.cards.join(" · ")}</p>
       )}
       {value.kind === "custom" && (
         <DeckEditor

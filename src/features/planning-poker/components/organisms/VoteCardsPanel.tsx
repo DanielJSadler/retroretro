@@ -4,15 +4,16 @@ interface VoteCardsPanelProps {
   cards: string[];
   selectedValue: string | null;
   onVote: (value: string) => void;
+  compact?: boolean;
 }
 
-export function VoteCardsPanel({ cards, selectedValue, onVote }: VoteCardsPanelProps) {
+export function VoteCardsPanel({ cards, selectedValue, onVote, compact = false }: VoteCardsPanelProps) {
   return (
-    <div className="flex flex-col gap-4">
-      <h2 className="text-lg font-semibold text-slate-100">
+    <div className="flex min-w-0 flex-col gap-3">
+      <h2 className={`${compact ? 'text-sm' : 'text-lg'} font-semibold text-slate-100`}>
         Choose your card
       </h2>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+      <div className={`grid gap-4 p-3 ${compact ? 'grid-cols-[repeat(auto-fit,minmax(min(100%,3.5rem),1fr))]' : 'grid-cols-[repeat(auto-fit,minmax(min(100%,7rem),1fr))]'}`}>
         {cards.map((value) => (
           <VoteCard
             key={value}
@@ -20,6 +21,7 @@ export function VoteCardsPanel({ cards, selectedValue, onVote }: VoteCardsPanelP
             isSelected={selectedValue === value}
             onClick={() => onVote(value)}
             className="w-full"
+            compact={compact}
           />
         ))}
       </div>

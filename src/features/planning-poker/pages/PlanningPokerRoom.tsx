@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { useParams, useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
+import { useParams } from "next/navigation";
 import { useQuery } from "convex/react";
 import Link from "next/link";
 import { api } from "../../../../convex/_generated/api";
@@ -33,7 +33,6 @@ import { Button } from "../components/atoms/Button";
 export default function PlanningPokerRoom() {
   const params = useParams<{ roomCode: string }>();
   const roomCode = params.roomCode.toUpperCase();
-  const router = useRouter();
   const { player, savePlayer, isModerator, isLoading: isPlayerLoading } = usePlayer();
   const {
     submitVote,
@@ -80,7 +79,8 @@ export default function PlanningPokerRoom() {
   const [isChangingDeck, setIsChangingDeck] = useState(false);
   const [isPiPEnabled, setIsPiPEnabled] = useState(false);
   const pipWindowRef = useRef<Window | null>(null);
-  const pipRootRef = useRef<Root | null>(null);
+  const [pipWindow, setPiPWindow] = useState<Window | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const openPiPRef = useRef<() => Promise<void>>(async () => {});
 
   const currentPlayer = useMemo(() => {
@@ -91,6 +91,7 @@ export default function PlanningPokerRoom() {
   const handleVote = useCallback(
     async (value: string) => {
       if (!session || !player || !currentPlayer) return;
+      setActionError(null);
       setShowDeckPicker(false);
       setSelectedVote(selectedVote === value ? null : value);
       try {
@@ -101,6 +102,7 @@ export default function PlanningPokerRoom() {
         });
       } catch {
         setSelectedVote(currentVote ? voteLabel(currentVote.value) : null);
+        setActionError("Could not submit your vote. Please try again.");
         addToast("Could not submit your vote. Please try again.");
       }
     },
@@ -109,25 +111,30 @@ export default function PlanningPokerRoom() {
 
   const handleReveal = useCallback(async () => {
     if (!session) return;
+    setActionError(null);
     try {
       await revealVotes({ sessionId: session._id });
     } catch {
+      setActionError("Could not reveal votes. Please try again.");
       addToast("Could not reveal votes. Please try again.");
     }
   }, [addToast, revealVotes, session]);
 
   const handleReset = useCallback(async () => {
     if (!session) return;
+    setActionError(null);
     setSelectedVote(null);
     try {
       await resetRound({ sessionId: session._id });
     } catch {
+      setActionError("Could not reset the round. Please try again.");
       addToast("Could not reset the round. Please try again.");
     }
   }, [addToast, resetRound, session]);
 
   const handleChangeDeck = async () => {
     if (!session || !player) return;
+    setActionError(null);
     try {
       if (deckChoice.kind === "custom") {
         validateCustomCards(deckChoice.cards);
@@ -142,7 +149,9 @@ export default function PlanningPokerRoom() {
       setSelectedVote(null);
       setShowDeckPicker(false);
     } catch (cause) {
-      addToast(cause instanceof Error ? cause.message : "Could not change the deck.");
+      const message = cause instanceof Error ? cause.message : "Could not change the deck.";
+      setActionError(message);
+      addToast(message);
     } finally {
       setIsChangingDeck(false);
     }
@@ -172,26 +181,13 @@ export default function PlanningPokerRoom() {
       pipWindow.document.body.style.background = "#020617";
 
       pipWindowRef.current = pipWindow;
-      pipRootRef.current?.unmount();
-      pipRootRef.current = createRoot(pipWindow.document.body);
-      pipRootRef.current.render(
-        <PiPView
-          roomCode={roomCode}
-          deck={deck}
-          status={session?.status ?? "voting"}
-          selectedVote={selectedVote}
-          votes={normalizedVotes}
-          isModerator={isModerator(session?.moderatorId ?? "")}
-          onVote={handleVote}
-          onReveal={handleReveal}
-          onReset={handleReset}
-        />,
-      );
+      setPiPWindow(pipWindow);
       pipWindow.addEventListener("pagehide", () => {
-        pipWindowRef.current = null;
-        pipRootRef.current?.unmount();
-        pipRootRef.current = null;
-      });
+        if (pipWindowRef.current === pipWindow) {
+          pipWindowRef.current = null;
+          setPiPWindow(null);
+        }
+      }, { once: true });
     } catch {
       // Picture-in-Picture can be unsupported or blocked by the browser.
     }
@@ -203,8 +199,7 @@ export default function PlanningPokerRoom() {
       if (!document.hidden) {
         pipWindowRef.current?.close();
         pipWindowRef.current = null;
-        pipRootRef.current?.unmount();
-        pipRootRef.current = null;
+        setPiPWindow(null);
       } else if (isPiPEnabled) {
         void openPiPRef.current();
       }
@@ -213,29 +208,15 @@ export default function PlanningPokerRoom() {
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      pipWindowRef.current?.close();
-      pipWindowRef.current = null;
-      pipRootRef.current?.unmount();
-      pipRootRef.current = null;
     };
   }, [isPiPEnabled]);
 
   useEffect(() => {
-    if (!pipRootRef.current) return;
-    pipRootRef.current.render(
-      <PiPView
-        roomCode={roomCode}
-        deck={deck}
-        status={session?.status ?? "voting"}
-        selectedVote={selectedVote}
-        votes={normalizedVotes}
-        isModerator={isModerator(session?.moderatorId ?? "")}
-        onVote={handleVote}
-        onReveal={handleReveal}
-        onReset={handleReset}
-      />,
-    );
-  }, [handleReveal, handleReset, handleVote, isModerator, roomCode, deck, selectedVote, session?.moderatorId, session?.status, normalizedVotes]);
+    return () => {
+      pipWindowRef.current?.close();
+      pipWindowRef.current = null;
+    };
+  }, []);
 
   const togglePiP = async () => {
     const nextEnabled = !isPiPEnabled;
@@ -245,6 +226,7 @@ export default function PlanningPokerRoom() {
     } else {
       pipWindowRef.current?.close();
       pipWindowRef.current = null;
+      setPiPWindow(null);
     }
   };
 
@@ -362,6 +344,24 @@ export default function PlanningPokerRoom() {
   const voteCount = activePlayers.filter((candidate) => candidate.hasVoted).length;
   const canChangeDeck = session.status === "revealed" || !players.some((candidate) => candidate.hasVoted);
 
+  const toggleDeckPicker = () => {
+    setDeckChoice({ kind: "preset", presetId: "fibonacci" });
+    setShowDeckPicker((show) => !show);
+  };
+  const deckPicker = (showDeckPicker && canChangeDeck && isModerator(session.moderatorId) && (
+          <div className="min-w-0 max-w-lg space-y-4 rounded-xl border border-slate-800 bg-slate-900 p-3 sm:p-5">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-100">Change card deck</h2>
+              <p className="text-sm text-slate-400">Current: {deck.name}. Changing after reveal starts a new round.</p>
+            </div>
+            <DeckPicker value={deckChoice} onChange={setDeckChoice} isSignedIn={!!currentUser} />
+            <div className="flex flex-wrap gap-2 p-1">
+              <Button type="button" onClick={() => void handleChangeDeck()} isLoading={isChangingDeck}>Use this deck</Button>
+              <Button type="button" variant="secondary" onClick={() => setShowDeckPicker(false)}>Cancel</Button>
+            </div>
+          </div>
+        ));
+
   return (
     <GameLayout
       roomCode={roomCode}
@@ -370,6 +370,28 @@ export default function PlanningPokerRoom() {
       players={activePlayers}
       tableOverlay={<VoteMotionStack count={voteCount} revealed={session.status === "revealed"} />}
     >
+      {pipWindow && createPortal(
+        <PiPView
+          roomCode={roomCode}
+          round={session.round}
+          deck={deck}
+          status={session.status}
+          selectedVote={selectedVote}
+          players={players}
+          currentPlayerId={player?.playerId}
+          votes={normalizedVotes}
+          outliers={outlierIds}
+          isModerator={isModerator(session.moderatorId)}
+          onVote={handleVote}
+          onReveal={handleReveal}
+          onReset={handleReset}
+          onChangeDeck={toggleDeckPicker}
+          canChangeDeck={canChangeDeck}
+          deckPicker={deckPicker}
+          error={actionError}
+        />,
+        pipWindow.document.body,
+      )}
       <ConfettiBurst active={shouldCelebrate} />
       <div className="flex flex-col gap-6">
         <SessionControls
@@ -378,25 +400,10 @@ export default function PlanningPokerRoom() {
           onReveal={handleReveal}
           onReset={handleReset}
           onOpenPiP={togglePiP}
-          onChangeDeck={() => {
-            setDeckChoice({ kind: "preset", presetId: "fibonacci" });
-            setShowDeckPicker((show) => !show);
-          }}
+          onChangeDeck={toggleDeckPicker}
           canChangeDeck={canChangeDeck}
         />
-        {showDeckPicker && canChangeDeck && isModerator(session.moderatorId) && (
-          <div className="max-w-lg space-y-4 rounded-xl border border-slate-800 bg-slate-900 p-5">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-100">Change card deck</h2>
-              <p className="text-sm text-slate-400">Current: {deck.name}. Changing after reveal starts a new round.</p>
-            </div>
-            <DeckPicker value={deckChoice} onChange={setDeckChoice} isSignedIn={!!currentUser} />
-            <div className="flex gap-2">
-              <Button type="button" onClick={() => void handleChangeDeck()} isLoading={isChangingDeck}>Use this deck</Button>
-              <Button type="button" variant="secondary" onClick={() => setShowDeckPicker(false)}>Cancel</Button>
-            </div>
-          </div>
-        )}
+        {deckPicker}
         {session.status === "voting" && (
           <VoteCardsPanel cards={deck.cards} selectedValue={selectedVote} onVote={handleVote} />
         )}
