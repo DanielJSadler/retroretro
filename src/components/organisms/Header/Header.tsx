@@ -67,18 +67,20 @@ export default function Header({
 
   return (
     <header className="bg-white shadow-md flex-shrink-0">
-      <div className="px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="px-3 py-2 flex flex-wrap items-center justify-between gap-2 sm:px-4 sm:py-3">
+        <div className="min-w-0 flex flex-1 items-center gap-2">
           <button
             onClick={onToggleSidebar}
             className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+            aria-expanded={!sidebarCollapsed}
+            aria-controls="board-controls"
             title={sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'}
           >
             {sidebarCollapsed ? '☰' : '✕'}
           </button>
-          <div>
-            <h2 className="text-xl font-bold text-black">{session.name}</h2>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <h2 className="break-words text-base sm:text-xl font-bold text-black">{session.name}</h2>
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
               <p className="text-xs text-gray-600">
                 Phase:{' '}
                 <span className="font-semibold capitalize">{session.phase}</span>
@@ -88,7 +90,7 @@ export default function Header({
         </div>
 
         {/* Phase Banner */}
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           {timerExpired && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-600 text-white font-bold text-sm animate-pulse" role="alert">
               <span>⏰ Time&apos;s up</span>
@@ -114,7 +116,7 @@ export default function Header({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={toggleStandardMode}
             className="text-xs px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded text-gray-700 font-medium"
@@ -131,7 +133,7 @@ export default function Header({
           >
             📋 Share
           </Button>
-          <span className="text-sm text-black">
+          <span className="max-w-full break-words text-sm text-black">
             <span className="font-semibold">{currentUser}</span>
           </span>
           <Button onClick={onLeave} variant="secondary" size="sm">

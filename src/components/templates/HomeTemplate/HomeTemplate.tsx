@@ -42,7 +42,7 @@ export default function HomeTemplate({
     <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 p-4 transition-colors duration-300">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="text-center py-8 relative">
+        <div className="text-center pt-16 pb-6 sm:py-8 relative">
           <div className="absolute right-0 top-4">
              <button
               onClick={toggleStandardMode}
@@ -55,14 +55,14 @@ export default function HomeTemplate({
               {isStandardMode ? '✨ Standard' : '👾 Retro'}
             </button>
           </div>
-          <h1 className="text-5xl font-bold text-white mb-2">Retro Retro</h1>
+          <h1 className="text-3xl sm:text-5xl font-bold text-white mb-2">Retro Retro</h1>
           <p className="text-blue-100 text-lg">
             Collaborate on your team retrospective
           </p>
         </div>
 
         {/* Your Name - Always visible */}
-        <div className="bg-white rounded-2xl shadow-2xl p-6">
+        <div className="bg-white rounded-2xl shadow-2xl min-w-0 p-3 sm:p-6">
           <label
             htmlFor="name"
             className="block text-sm font-medium text-gray-700 mb-2"
@@ -77,7 +77,7 @@ export default function HomeTemplate({
           <JoinBoardForm onSubmit={onJoinBoard} disabled={!name.trim()} />
         </div>
 
-        <section className="bg-white rounded-2xl shadow-2xl p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <section className="bg-white rounded-2xl shadow-2xl min-w-0 p-3 sm:p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-xl font-bold text-gray-800">Ready to estimate a task?</h2>
             <p className="mt-1 text-gray-600">

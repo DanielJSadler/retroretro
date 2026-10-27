@@ -142,7 +142,7 @@ export default function BoardCanvas({
   return (
     <main
       id="board-main"
-      className={`flex-1 p-3 ${isFollowing ? 'overflow-hidden pointer-events-none' : 'overflow-auto'} ${
+      className={`board-viewport isolate min-w-0 min-h-0 flex-1 p-3 ${isFollowing ? 'overflow-hidden pointer-events-none' : 'overflow-auto'} ${
         isPanning ? 'cursor-grabbing select-none' : spacePressed ? 'cursor-grab' : ''
       }`}
       onPointerDown={handlePointerDown}
@@ -153,12 +153,12 @@ export default function BoardCanvas({
       onDrop={handleDrop}
     >
       <div
-        className="relative"
+        className="board-size relative"
         style={{ width: `${resolvedContentSize.width * zoom}px`, height: `${resolvedContentSize.height * zoom}px` }}
       >
         <div
           ref={activeBoardRef}
-          className={`absolute left-0 top-0 origin-top-left ${canvasSize ? '' : 'flex w-max gap-3'} ${
+          className={`board-surface absolute left-0 top-0 origin-top-left ${canvasSize ? '' : 'flex w-max gap-3'} ${
             isFollowing ? 'pointer-events-auto' : ''
           }`}
           style={{

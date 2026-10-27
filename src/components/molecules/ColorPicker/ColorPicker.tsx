@@ -23,13 +23,13 @@ export default function ColorPicker({
   className = '',
 }: ColorPickerProps) {
   return (
-    <div className={`flex gap-1 ${className}`}>
+    <div className={`flex shrink-0 gap-2 ${className}`}>
       {sectionColors.map((color) => (
         <button
           key={color.value}
           type="button"
           onClick={() => onChange(color.value)}
-          className={`w-5 h-5 rounded transition-all ${color.class} ${
+          className={`w-8 h-8 sm:w-5 sm:h-5 rounded transition-all ${color.class} ${
             value === color.value
               ? 'ring-2 ring-gray-800 scale-110'
               : 'ring-1 ring-gray-300 hover:scale-105'

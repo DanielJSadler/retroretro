@@ -4,3 +4,4 @@
 [x] - on poker poker, once revealed votes, again we stack vertically. I like this, but you cant see who voted for what. Make it so that when I hover over each card you can see who voted ( allow hover over card with a cool animation bringing it to the fore front, like an animation of the card coming out of the deck)
 [x] - timer bell can be glitchy, sometimes have to press it twice. Should be clearable locally by anyone who receives it and should clear first time.
 [x] - PiP contains compact player status, voting progress, all results, outliers, and deck controls; card selectors have responsive spacing without clipping.
+[x] - Responsive mobile layouts across home, authentication, folders, poker, and retro boards, with stacked notes and touch controls.

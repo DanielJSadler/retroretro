@@ -83,7 +83,7 @@ export default function PlanningPokerHome() {
     <main className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-md">
         {mode === "landing" && (
-          <Card className="p-8 text-center">
+          <Card className="min-w-0 p-4 sm:p-8 text-center">
             <div className="mb-6 flex justify-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-900/30 text-indigo-400">
                 <Sparkles size={32} />
@@ -113,7 +113,7 @@ export default function PlanningPokerHome() {
         )}
 
         {mode === "create" && (
-          <Card className="p-8">
+          <Card className="min-w-0 p-4 sm:p-8">
             {backButton}
             <h2 className="mb-6 text-xl font-bold text-slate-100">
               Create a Session
@@ -130,7 +130,7 @@ export default function PlanningPokerHome() {
         )}
 
         {mode === "join" && (
-          <Card className="p-8">
+          <Card className="min-w-0 p-4 sm:p-8">
             {backButton}
             <h2 className="mb-6 text-xl font-bold text-slate-100">
               Join a Session

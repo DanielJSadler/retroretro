@@ -17,7 +17,7 @@ const types = [
 
 export default function ConfettiMenu({ isActive, onToggle, currentType, onTypeChange }: ConfettiMenuProps) {
   return (
-    <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-full shadow-xl p-2 z-50 flex items-center gap-2 border border-blue-100">
+    <div className="fixed bottom-2 sm:bottom-6 max-w-[calc(100%-1.5rem)] flex-wrap justify-center left-1/2 transform -translate-x-1/2 bg-white rounded-full shadow-xl p-2 z-50 flex items-center gap-2 border border-blue-100">
       <Button
         onClick={onToggle}
         size="sm"
@@ -28,7 +28,7 @@ export default function ConfettiMenu({ isActive, onToggle, currentType, onTypeCh
       </Button>
 
       {isActive && (
-        <div className="flex gap-1 border-l pl-2 ml-2">
+        <div className="flex flex-wrap justify-center gap-1 border-l pl-2 ml-2">
           {types.map((type) => (
             <button
               key={type.id}

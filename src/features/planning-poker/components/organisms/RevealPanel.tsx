@@ -29,10 +29,10 @@ export function RevealPanel({ votes, outliers, deck }: RevealPanelProps) {
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-      <div className="flex flex-1 flex-col gap-6">
+      <div className="flex min-w-0 flex-1 flex-col gap-6">
         <h2 className="text-lg font-semibold text-slate-100">Results</h2>
         <AverageDisplay votes={voteValues} deck={deck} />
-        <div className="flex flex-wrap gap-6">
+        <div className="flex flex-wrap gap-6 px-2 pt-10 pb-3">
           {groupedVotes.map(([value, group]) => (
             <div key={value} className="relative flex min-w-[140px] items-start">
               <div className="relative flex min-h-[180px] flex-col items-center">
@@ -68,7 +68,7 @@ export function RevealPanel({ votes, outliers, deck }: RevealPanelProps) {
           ))}
         </div>
       </div>
-      <div className="lg:w-[320px] lg:sticky lg:top-4">
+      <div className="min-w-0 lg:w-[320px] lg:shrink-0 lg:sticky lg:top-4">
         <ResultsChart votes={voteValues.map((value) => ({ value }))} deck={deck} />
       </div>
     </div>

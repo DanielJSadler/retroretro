@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Session } from '@/types'
 import ParticipantList from '@/components/organisms/ParticipantList'
 import PhaseControls from '@/components/organisms/PhaseControls'
@@ -12,6 +12,7 @@ interface SidebarProps {
   currentUser: string
   currentUserId?: string
   collapsed: boolean
+  onClose?: () => void
   zoom: number
   onPhaseChange: (phase: Session['phase'], options?: { votesPerPerson?: number; resetVotes?: boolean }) => void
   onStartTimer: (duration: number) => void
@@ -35,6 +36,7 @@ export default function Sidebar({
   currentUser,
   currentUserId,
   collapsed,
+  onClose,
   zoom,
   onPhaseChange,
   onStartTimer,
@@ -53,6 +55,21 @@ export default function Sidebar({
   setFollowedUser,
 }: SidebarProps) {
   const [iframeExpanded, setIframeExpanded] = useState(false)
+  const panelRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    if (collapsed || !window.matchMedia('(max-width: 767px)').matches) return
+    const previousFocus = document.activeElement as HTMLElement | null
+    panelRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose?.()
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('keydown', handleKey)
+      previousFocus?.focus()
+    }
+  }, [collapsed, onClose])
 
   return (
     <>
@@ -60,11 +77,18 @@ export default function Sidebar({
       {iframeExpanded && <div className="fixed inset-0 z-9998 bg-black/50" onClick={() => setIframeExpanded(false)} />}
 
       <aside
-        className={`bg-white shadow-lg transition-all duration-300 overflow-y-auto shrink-0 flex flex-col ${
-          collapsed ? 'w-0 p-0 overflow-hidden' : 'w-72'
+        ref={panelRef}
+        id="board-controls"
+        aria-label="Board controls"
+        aria-hidden={collapsed}
+        inert={collapsed}
+        style={{ zIndex: 100002 }}
+        className={`absolute inset-y-0 left-0 md:static bg-white shadow-lg transition-all duration-300 overflow-y-auto overscroll-contain shrink-0 flex flex-col ${
+          collapsed ? 'w-0 p-0 overflow-hidden invisible' : 'w-72 max-w-full'
         }`}
       >
         <div className="flex-1 p-3 space-y-3">
+          <button type="button" onClick={onClose} className="md:hidden w-full rounded bg-gray-200 px-3 py-2 font-semibold text-gray-800">Close controls</button>
           <ParticipantList
             participants={session.participants}
             currentUser={currentUser}
@@ -117,7 +141,9 @@ export default function Sidebar({
             </ul>
           </div>
 
-          <ZoomControls zoom={zoom} onZoomIn={onZoomIn} onZoomOut={onZoomOut} onReset={onZoomReset} onFit={onZoomFit} />
+          <div className="hidden md:block">
+            <ZoomControls zoom={zoom} onZoomIn={onZoomIn} onZoomOut={onZoomOut} onReset={onZoomReset} onFit={onZoomFit} />
+          </div>
 
           {/* Single iframe that switches between inline and fullscreen */}
           <div

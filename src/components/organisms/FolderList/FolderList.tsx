@@ -53,12 +53,12 @@ function FolderSection({
         onClick={() => setIsOpen(!isOpen)}
         className="w-full px-4 py-3 bg-gray-50 flex items-center justify-between hover:bg-gray-100 transition-colors rounded-t-lg border-b border-gray-100"
       >
-        <div className="flex items-center gap-2">
+        <div className="min-w-0 flex flex-wrap items-center gap-2">
           <span className="text-lg">{icon}</span>
-          <span className="font-semibold text-gray-800">{title}</span>
+          <span className="min-w-0 break-words font-semibold text-gray-800">{title}</span>
           <span className="text-sm text-gray-500">({boards.length})</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="min-w-0 flex flex-wrap items-center gap-2">
           {onRename && (
             <span
               onClick={(e) => {
@@ -94,7 +94,8 @@ function FolderSection({
             boards.map((board) => (
               <div key={board.id} className="relative group">
                 <BoardCard board={board} onRejoin={onRejoin} />
-                <div className="absolute top-5 right-36 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <div data-folder-actions
+                  className="relative mt-2 sm:absolute sm:mt-0 sm:top-5 sm:right-36 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity z-10">
                   <button
                     onClick={() =>
                       setShowMoveMenu(showMoveMenu === board.id ? null : board.id)
@@ -105,7 +106,7 @@ function FolderSection({
                     📁
                   </button>
                   {showMoveMenu === board.id && (
-                    <div className="absolute top-8 right-0 bg-white border rounded-lg shadow-xl py-1 z-50 min-w-[180px]">
+                    <div className="absolute top-full left-0 sm:left-auto sm:right-0 bg-white border rounded-lg shadow-xl py-1 z-50 min-w-[180px]">
                       {folderId && (
                         <button
                           onClick={() => {
@@ -207,15 +208,15 @@ export default function FolderList({
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-2xl shadow-2xl p-6">
+      <div className="bg-white rounded-2xl shadow-2xl min-w-0 p-3 sm:p-6">
         <div className="text-center py-8 text-gray-500">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-2xl p-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white rounded-2xl shadow-2xl min-w-0 p-3 sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h2 className="text-xl font-bold text-gray-800">📋 Your Boards</h2>
         <Button
           onClick={() => setShowNewFolder(true)}
@@ -227,13 +228,13 @@ export default function FolderList({
       </div>
 
       {showNewFolder && (
-        <div className="mb-4 p-3 bg-blue-50 rounded-lg flex gap-2">
+        <div className="mb-4 p-3 bg-blue-50 rounded-lg flex flex-wrap gap-2">
           <Input
             type="text"
             value={newFolderName}
             onChange={(e) => setNewFolderName(e.target.value)}
             placeholder="Folder name"
-            className="flex-1"
+            className="min-w-0 basis-full sm:basis-0 flex-1"
             onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
             autoFocus
           />
@@ -265,13 +266,13 @@ export default function FolderList({
           {boardsByFolder.map(({ folder, boards: folderBoards }) => (
             <div key={folder.id}>
               {editingFolder === folder.id ? (
-                <div className="p-3 bg-yellow-50 rounded-lg flex gap-2 mb-2">
+                <div className="p-3 bg-yellow-50 rounded-lg flex flex-wrap gap-2 mb-2">
                   <Input
                     type="text"
                     value={editFolderName}
                     onChange={(e) => setEditFolderName(e.target.value)}
                     placeholder="Folder name"
-                    className="flex-1"
+                    className="min-w-0 basis-full sm:basis-0 flex-1"
                     onKeyDown={(e) =>
                       e.key === 'Enter' && handleRenameFolder(folder.id)
                     }

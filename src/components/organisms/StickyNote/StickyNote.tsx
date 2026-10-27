@@ -91,7 +91,7 @@ export default function StickyNote({
   }
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (isEditing || isReference || isDragPreview) return;
+    if (isEditing || isReference || isDragPreview || window.matchMedia("(max-width: 767px)").matches) return;
 
     // Only drag if clicking the note background, not buttons
     if ((e.target as HTMLElement).tagName === 'BUTTON') return;
@@ -276,7 +276,7 @@ export default function StickyNote({
             onMouseDown={(e) => e.stopPropagation()}
             autoFocus
           />
-          <div className="flex gap-2 justify-end">
+          <div className="flex flex-wrap gap-2 justify-end">
              <span className="text-[10px] text-gray-500 self-center mr-auto">
                Enter to save, Shift+Enter for new line
              </span>
@@ -313,7 +313,7 @@ export default function StickyNote({
 
       {/* Vote section */}
       {(currentPhase === 'voting' || currentPhase === 'discussion') && (
-        <div className="flex items-center justify-between mt-2 pt-2 border-t border-black/10">
+        <div className="flex flex-wrap gap-2 items-center justify-between mt-2 pt-2 border-t border-black/10">
           <div className="flex items-center gap-1.5 bg-white/30 px-2 py-1 rounded-full">
             <span className="text-sm">👍</span>
             <span className="font-bold text-gray-900 text-sm">

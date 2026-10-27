@@ -12,6 +12,7 @@ const sectionColorClasses: Record<NoteColor, string> = {
 
 interface BoardSectionProps {
   section: Section
+  sectionOptions: Section[]
   isActions: boolean
   allNotes: Note[]
   visibleNotes: Note[]
@@ -54,6 +55,7 @@ interface BoardSectionProps {
 
 export default function BoardSection({
   section,
+  sectionOptions,
   isActions,
   allNotes,
   visibleNotes,
@@ -297,7 +299,7 @@ export default function BoardSection({
             )
           }}
           onDragEnd={onSectionDragEnd}
-          className="cursor-grab rounded px-1 text-gray-500 hover:bg-white/60 active:cursor-grabbing"
+          className="hidden md:block cursor-grab rounded px-1 text-gray-500 hover:bg-white/60 active:cursor-grabbing"
           title="Drag to move this board area"
           aria-label={`Move ${section.name}`}
         >
@@ -318,7 +320,8 @@ export default function BoardSection({
         onClick={handleSectionClick}
       >
         {isActions && topVotedRefs.length > 0 && (
-          <div className="absolute left-2 top-2 space-y-2 z-10 pointer-events-auto">
+          <div data-top-voted
+            className="absolute left-2 top-2 space-y-2 z-10 pointer-events-auto">
             <div className="text-xs font-semibold text-purple-700 mb-1">🏆 Top Voted Items:</div>
             {topVotedRefs.map(refNote => (
               <div
@@ -404,12 +407,31 @@ export default function BoardSection({
                   zoom={zoom}
                 />
               )}
+              {!isGhost && canEditNote(note) && sessionPhase !== 'finished' && (
+                <label className="md:hidden flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-700">
+                  Move to section
+                  <select
+                    aria-label={`Move note by ${note.createdBy} to section`}
+                    value={section.id}
+                    onClick={event => event.stopPropagation()}
+                    onChange={event => {
+                      const target = event.target.value
+                      void onUpdateNote(note.id, { sectionId: target, position: { x: 5, y: 5 } })
+                    }}
+                    className="min-w-0 w-full rounded border border-gray-300 bg-white p-2"
+                  >
+                    {/* Section choices are provided by the board for touch movement. */}
+                    {sectionOptions.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}
+                  </select>
+                </label>
+              )}
             </div>
           )
         })}
 
         {canCreateInSection && creatingInSection === section.id && (
           <div
+            data-note-editor
             className="absolute bg-white rounded-lg shadow-xl p-3 z-50 w-48"
             style={{
               left: `${newNotePosition?.x ?? 20}%`,
@@ -457,7 +479,7 @@ export default function BoardSection({
           visibleNotes.length === 0 &&
           creatingInSection !== section.id &&
           !(isActions && topVotedRefs.length > 0) && (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-400 pointer-events-none">
+          <div data-empty-section className="absolute inset-0 flex items-center justify-center text-gray-400 pointer-events-none">
             <div className="text-center">
               <div className="text-2xl mb-1">📝</div>
               <p className="text-xs">Click to add a note</p>
@@ -465,11 +487,15 @@ export default function BoardSection({
           </div>
           )}
 
+        {canCreateInSection && !creatingInSection && (
+          <button type="button" className="md:hidden w-full rounded-lg border border-dashed border-gray-400 bg-white/60 px-3 py-2 font-semibold text-gray-700">+ Add note</button>
+        )}
+
         {sessionPhase !== 'finished' && (
           <button
             type="button"
             data-resize-handle
-            className="absolute bottom-1 right-1 z-50 h-7 w-7 cursor-nwse-resize touch-none rounded border border-gray-500/30 bg-white/80 text-gray-600 shadow-sm hover:bg-white"
+            className="hidden md:block absolute bottom-1 right-1 z-50 h-7 w-7 cursor-nwse-resize touch-none rounded border border-gray-500/30 bg-white/80 text-gray-600 shadow-sm hover:bg-white"
             onPointerDown={handleResizeStart}
             onPointerMove={handleResizeMove}
             onPointerUp={handleResizeEnd}

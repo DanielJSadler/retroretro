@@ -239,3 +239,51 @@ body.standard-mode:not(:has(#planning-poker)) {
   font-family: var(--font-geist-sans), sans-serif; /* Use clean sans-serif for standard mode */
   font-size: 1rem;
 }
+/* Small screens use a readable section list instead of a scaled desktop canvas. */
+@media (max-width: 767px) {
+  input, select, textarea { font-size: 16px !important; max-width: 100%; }
+  button, a { -webkit-tap-highlight-color: transparent; }
+  button { min-height: 44px; }
+  h1, h2, h3, p, label { overflow-wrap: anywhere; }
+  .retro-board > header { max-height: 42dvh; overflow-y: auto; }
+  .retro-board .board-size { width: 100% !important; height: auto !important; }
+  .retro-board .board-surface {
+    position: relative !important;
+    width: 100% !important;
+    height: auto !important;
+    transform: none !important;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-bottom: 90px;
+    background-image: none !important;
+  }
+  .retro-board [data-board-section] {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    min-width: 0;
+  }
+  .retro-board .section-canvas { display: flex; flex-direction: column; gap: 12px; padding: 12px; cursor: auto; }
+  .retro-board .sticky-note { min-width: 0; }
+  .retro-board .sticky-note > div:first-child,
+  .retro-board [data-note-editor],
+  .retro-board [data-top-voted],
+  .retro-board [data-empty-section] {
+    position: relative !important;
+    inset: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    cursor: auto;
+  }
+  .retro-board .sticky-note > div:first-child { overflow-wrap: anywhere; }
+  .retro-board .board-surface > svg { display: none; }
+}
+
+@media (pointer: coarse) {
+  /* Folder actions must remain discoverable without a mouse hover. */
+  [data-folder-actions] { opacity: 1 !important; }
+}

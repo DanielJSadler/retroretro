@@ -51,7 +51,7 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="bg-white p-8 w-full max-w-md">
+      <div className="bg-white min-w-0 p-4 sm:p-8 w-full max-w-md">
         <h1 className="text-3xl text-center mb-8">🎮 Retro Retro</h1>
         
         <h2 className="text-xl text-center mb-6">Create Account</h2>

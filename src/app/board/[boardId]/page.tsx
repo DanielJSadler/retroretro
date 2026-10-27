@@ -22,7 +22,8 @@ export default function BoardPage() {
   const params = useParams()
   const boardId = params.boardId as string
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
+  const closeSidebar = useCallback(() => setSidebarCollapsed(true), [])
   const [zoom, setZoom] = useState(1)
   const [justDragged, setJustDragged] = useState(false)
   const [draggingNote, setDraggingNote] = useState<{ note: Note; x: number; y: number } | null>(null)
@@ -41,6 +42,17 @@ export default function BoardPage() {
   const sectionRefs = useRef<Map<string, HTMLDivElement | null>>(new Map())
   const noteRefs = useRef<Map<string, HTMLDivElement | null>>(new Map())
   const focusTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    const desktop = window.matchMedia('(min-width: 768px)')
+    const updateSidebar = () => setSidebarCollapsed(!desktop.matches)
+    const frame = requestAnimationFrame(updateSidebar)
+    desktop.addEventListener('change', updateSidebar)
+    return () => {
+      cancelAnimationFrame(frame)
+      desktop.removeEventListener('change', updateSidebar)
+    }
+  }, [])
 
   const { board, session, currentUser, currentUserName, isAuthenticated, authLoading, setVotingDone } = useBoardSync(boardId)
   const { getCursorPositions } = useCursorTracking(boardId, boardRef, zoom)
@@ -272,7 +284,7 @@ export default function BoardPage() {
     : undefined
 
   return (
-    <div className="h-screen flex flex-col bg-gray-100 text-black overflow-hidden">
+    <div className="retro-board h-dvh flex flex-col bg-gray-100 text-black overflow-hidden">
       <Header
         session={session}
         currentUser={currentUserName}
@@ -291,12 +303,14 @@ export default function BoardPage() {
         }}
       />
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="relative min-h-0 min-w-0 flex-1 flex overflow-hidden">
+        {!sidebarCollapsed && <button type="button" aria-label="Close board controls" onClick={closeSidebar} className="absolute inset-0 bg-black/40 md:hidden" style={{ zIndex: 100001 }} />}
         <Sidebar
           session={session}
           currentUser={currentUserName}
           currentUserId={currentUser?.id}
           collapsed={sidebarCollapsed}
+          onClose={closeSidebar}
           zoom={zoom}
           onPhaseChange={handlePhaseChange}
           onStartTimer={duration => {
@@ -349,6 +363,7 @@ export default function BoardPage() {
             <BoardSection
               key={section.id}
               section={section}
+              sectionOptions={session.sections}
               isActions={notesManager.isActionsSection(section)}
               allNotes={session.notes}
               visibleNotes={session.notes.filter(

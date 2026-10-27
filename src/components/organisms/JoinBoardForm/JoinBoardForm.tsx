@@ -32,7 +32,7 @@ export default function JoinBoardForm({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-2xl p-6">
+    <div className="bg-white rounded-2xl shadow-2xl min-w-0 p-3 sm:p-6">
       <h2 className="text-xl font-bold text-gray-800 mb-4">
         🔗 Join Existing Board
       </h2>
