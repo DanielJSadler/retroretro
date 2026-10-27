@@ -92,7 +92,7 @@ export default function PlanningPokerRoom() {
     async (value: string) => {
       if (!session || !player || !currentPlayer) return;
       setShowDeckPicker(false);
-      setSelectedVote(value);
+      setSelectedVote(selectedVote === value ? null : value);
       try {
         await submitVote({
           sessionId: session._id,
@@ -100,10 +100,11 @@ export default function PlanningPokerRoom() {
           value,
         });
       } catch {
+        setSelectedVote(currentVote ? voteLabel(currentVote.value) : null);
         addToast("Could not submit your vote. Please try again.");
       }
     },
-    [addToast, currentPlayer, player, session, submitVote],
+    [addToast, currentPlayer, currentVote, player, selectedVote, session, submitVote],
   );
 
   const handleReveal = useCallback(async () => {

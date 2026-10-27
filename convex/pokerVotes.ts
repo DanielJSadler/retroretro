@@ -33,6 +33,11 @@ export const submitVote = mutation({
       .unique();
 
     if (existing) {
+      if (voteLabel(existing.value) === voteLabel(args.value)) {
+        await ctx.db.delete(existing._id);
+        await ctx.db.patch(args.playerId, { hasVoted: false });
+        return { success: true };
+      }
       await ctx.db.patch(existing._id, { value: args.value });
     } else {
       await ctx.db.insert("pokerVotes", {
