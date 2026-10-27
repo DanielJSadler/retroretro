@@ -54,6 +54,7 @@ export default function BoardPage() {
     handleLeave,
   } = useBoardControls(boardId)
   const notesManager = useNotes(boardId, session, currentUser)
+  const handleTimerFinish = useCallback(() => setTimerExpired(true), [])
 
   const handleNoteElementChange = useCallback((noteId: string, element: HTMLDivElement | null) => {
     if (element) {
@@ -119,10 +120,11 @@ export default function BoardPage() {
     requestAnimationFrame(() => mainEl.scrollTo({ left: 0, top: 0 }))
   }, [])
 
-  const [previousPhase, setPreviousPhase] = useState(session?.phase)
-  if (previousPhase !== session?.phase) {
-    setPreviousPhase(session?.phase)
-    if (session?.phase === 'reveal') setTimerExpired(false)
+  const timerKey = `${boardId}:${session?.timerStartedAt}:${session?.timerDuration}`
+  const [previousTimerKey, setPreviousTimerKey] = useState(timerKey)
+  if (previousTimerKey !== timerKey) {
+    setPreviousTimerKey(timerKey)
+    setTimerExpired(false)
   }
 
   const handleNoteDragStart = (note: Note, x: number, y: number) => {
@@ -286,7 +288,6 @@ export default function BoardPage() {
         timerExpired={timerExpired}
         onDismissTimer={() => {
           setTimerExpired(false)
-          void handleResetTimer()
         }}
       />
 
@@ -307,7 +308,8 @@ export default function BoardPage() {
             setTimerExpired(false)
             handleResetTimer()
           }}
-          onTimerFinish={() => setTimerExpired(true)}
+          onTimerFinish={handleTimerFinish}
+          timerExpired={timerExpired}
           onVotingDone={setVotingDone}
           onZoomIn={() => handleZoomChange(zoom + 0.1)}
           onZoomOut={() => handleZoomChange(zoom - 0.1)}

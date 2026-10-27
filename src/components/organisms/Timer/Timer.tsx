@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface TimerProps {
   duration: number;
@@ -11,6 +11,7 @@ interface TimerProps {
   onPause: () => void;
   onReset: () => void;
   onFinish?: () => void;
+  alertActive?: boolean;
 }
 
 export default function Timer({
@@ -22,10 +23,17 @@ export default function Timer({
   onPause,
   onReset,
   onFinish,
+  alertActive = true,
 }: TimerProps) {
   const [customDuration, setCustomDuration] = useState(5);
   const [remainingTime, setRemainingTime] = useState(0);
   const [hasFinished, setHasFinished] = useState(false);
+  const notifiedTimer = useRef<string | null>(null);
+  const onFinishRef = useRef(onFinish);
+
+  useEffect(() => {
+    onFinishRef.current = onFinish;
+  }, [onFinish]);
 
   useEffect(() => {
     if (startedAt && !isPaused) {
@@ -38,9 +46,10 @@ export default function Timer({
         if (remaining === 0) {
           clearInterval(interval);
           setHasFinished(true);
-          if (onFinish) {
-            onFinish();
-          }
+          const timerKey = `${startedAt}:${duration}`;
+          if (notifiedTimer.current === timerKey) return;
+          notifiedTimer.current = timerKey;
+          onFinishRef.current?.();
 
           // Play a short, noticeable alert when the timer ends. The visual
           // alert remains available when the browser blocks audio.
@@ -58,6 +67,7 @@ export default function Timer({
               oscillator.connect(gain);
               gain.connect(context.destination);
               oscillator.start();
+              oscillator.onended = () => { void context.close(); };
               oscillator.stop(context.currentTime + 0.45);
             }
           } catch {
@@ -74,7 +84,7 @@ export default function Timer({
       const frame = requestAnimationFrame(() => { setRemainingTime(0); setHasFinished(false); });
       return () => cancelAnimationFrame(frame);
     }
-  }, [startedAt, duration, isPaused, serverRemainingTime, onFinish]);
+  }, [startedAt, duration, isPaused, serverRemainingTime]);
 
   const formatTime = (ms: number) => {
     const seconds = Math.floor(ms / 1000);
@@ -167,7 +177,7 @@ export default function Timer({
         )}
       </div>
 
-      {hasFinished && (
+      {hasFinished && alertActive && (
         <div className="mt-3 text-center text-red-600 font-semibold">
           Time&apos;s Up!
         </div>

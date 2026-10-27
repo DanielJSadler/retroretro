@@ -18,6 +18,7 @@ interface SidebarProps {
   onPauseTimer: () => void
   onResetTimer: () => void
   onTimerFinish?: () => void
+  timerExpired?: boolean
   onVotingDone?: (isDone: boolean) => void
   onZoomIn: () => void
   onZoomOut: () => void
@@ -40,6 +41,7 @@ export default function Sidebar({
   onPauseTimer,
   onResetTimer,
   onTimerFinish,
+  timerExpired,
   onVotingDone,
   onZoomIn,
   onZoomOut,
@@ -102,6 +104,7 @@ export default function Sidebar({
             onPause={onPauseTimer}
             onReset={onResetTimer}
             onFinish={onTimerFinish}
+            alertActive={timerExpired}
           />
 
           <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-600">
